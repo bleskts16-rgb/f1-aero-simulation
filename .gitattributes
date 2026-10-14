@@ -1,0 +1,4 @@
+# OpenFOAM dictionaries and shell scripts run under WSL/Linux: keep LF everywhere.
+* text=auto eol=lf
+*.png binary
+*.stl binary

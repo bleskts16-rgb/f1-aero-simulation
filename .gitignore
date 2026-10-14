@@ -1,0 +1,35 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# FastF1 telemetry cache (re-downloadable)
+data/fastf1_cache/
+
+# OpenFOAM: keep case templates (0/, constant/, system/), never results
+cfd/**/processor*/
+cfd/**/postProcessing/
+cfd/**/[1-9]*/
+cfd/**/0.[0-9]*/
+cfd/**/constant/polyMesh/
+cfd/**/constant/extendedFeatureEdgeMesh/
+cfd/**/*.foam
+cfd/**/log.*
+cfd/**/VTK/
+cfd/runs/
+
+# Large geometry / datasets
+*.stl
+!cad/templates/**/*.stl
+*.vtk
+*.vtu
+*.h5
+*.npz
+data/raw/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

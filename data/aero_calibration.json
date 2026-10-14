@@ -1,0 +1,38 @@
+{
+  "Monza": {
+    "cla": 6.143,
+    "cda": 1.358,
+    "speed_rms_kph": 11.78,
+    "lap_sim": 78.55,
+    "lap_real": 79.327,
+    "driver": "NOR",
+    "year": 2024
+  },
+  "Budapest": {
+    "cla": 8.005,
+    "cda": 1.886,
+    "speed_rms_kph": 15.49,
+    "lap_sim": 74.115,
+    "lap_real": 75.227,
+    "driver": "NOR",
+    "year": 2024
+  },
+  "Suzuka": {
+    "cla": 6.499,
+    "cda": 1.842,
+    "speed_rms_kph": 14.1,
+    "lap_sim": 87.8,
+    "lap_real": 88.197,
+    "driver": "VER",
+    "year": 2024
+  },
+  "Silverstone": {
+    "cla": 7.058,
+    "cda": 1.722,
+    "speed_rms_kph": 13.57,
+    "lap_sim": 85.754,
+    "lap_real": 85.819,
+    "driver": "RUS",
+    "year": 2024
+  }
+}
