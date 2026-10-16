@@ -19,7 +19,7 @@ F1 셋업 파라미터(윙 각도, 라이드 하이트, 사이드포드 형상 �
 | 단계 | 내용 | 상태 |
 |---|---|---|
 | 1 | QSS 랩타임 시뮬레이터 + 실제 F1 텔레메트리 검증 | ✅ 1차 완료 |
-| 2 | 파라메트릭 단순화 F1 형상 (OpenVSP / CadQuery) | ⏳ |
+| 2 | 파라메트릭 단순화 F1 형상 (CadQuery, 2026 기술규정 기준) | 🔧 1차 형상 완료 |
 | 3 | OpenFOAM 자동 해석 파이프라인 (multi-fidelity) | ⏳ |
 | 4 | 공력 서로게이트 학습 → 랩 시뮬 연결 | ⏳ |
 | 5 | 웹 데모 + LLM 에이전트 | ⏳ |
@@ -53,6 +53,20 @@ F1 셋업 파라미터(윙 각도, 라이드 하이트, 사이드포드 형상 �
 - 질점 모델이라 공력 밸런스(앞뒤 다운포스 배분)의 영향은 보지 못합니다. 이후 2축(bicycle) 모델로 확장할 예정입니다.
 - 트랙 데이터에 연석이 포함되지 않고 측량 노이즈가 있어, 곡률 평활화(σ = 8 m)를 적용했습니다.
 
+## 2단계: 2026 규정 기반 단순화 형상
+
+FIA 2026 F1 Technical Regulations (Issue 8, 2024-06-24)의 기본 치수와 Appendix 1
+Reference Volume을 따라 CadQuery로 만든 파라메트릭 형상입니다.
+
+- **규정에서 가져온 값**: 휠베이스 3400 mm, 폭 1900 mm, 18인치 림, 앞날개·뒷날개·바닥·사이드포드·엔진커버 기준 볼륨, 날개 요소 간격(앞 5–15 mm, 뒤 10–15 mm)
+- **단순화한 부분**: 차체는 초타원 단면 로프트, 날개는 NACA 6412 역캠버 단면 3장입니다. 사이드포드는 막혀 있고, 헤일로·미러·서스펜션·브레이크덕트·플로어 보드·플랭크는 넣지 않았습니다.
+- **가정한 값**: 타이어 외경·폭(공급사 데이터), 라이드 하이트(앞 30 mm, 뒤 80 mm), 날개 받음각
+- **좌표계**: FIA 규정과 같습니다(X 후방 +, Y 운전자 오른쪽 +, Z 위 +). 원점은 앞차축이고 노면은 Z = 0입니다.
+- **출력**: `cad/out/<이름>/`에 부품별 STL(m 단위, snappyHexMesh용)과 STEP(mm), 파라미터 JSON을 저장합니다. `--half`를 주면 Y ≥ 0 반쪽 모델(대칭면 해석용)을 만듭니다.
+- **빌드 후 확인 항목**: 각 부품이 단일 유효 솔리드인지, STL이 닫힌 매니폴드인지, 주요 규정 치수를 지키는지 확인합니다.
+
+![car2026](docs/figures/car2026_baseline.png)
+
 ## 사용법
 
 ```bash
@@ -64,6 +78,10 @@ python scripts/run_lap.py Monza --calibrated            # 한 랩 시뮬 + 그�
 python scripts/run_lap.py Suzuka --cla 7.0 --cda 1.6    # 공력값 직접 지정
 python scripts/validate.py Monza Suzuka --calibrated    # 실제 랩과 비교
 python scripts/calibrate_aero.py Monza Budapest         # 서킷별 공력 역산
+
+python scripts/build_car.py                             # 2026 단순화 형상 (전체)
+python scripts/build_car.py --half                      # 대칭면 해석용 반쪽 모델
+python scripts/build_car.py --fw-flap-delta -10 --rw-flap-delta -25 --name low_drag
 ```
 
 ## 구조
@@ -72,7 +90,7 @@ python scripts/calibrate_aero.py Monza Budapest         # 서킷별 공력 역�
 lapsim/          랩타임 시뮬레이터 (track, vehicle, qss, reference)
 scripts/         실행·검증·보정 스크립트
 data/tracks/     서킷 중심선 데이터 (TUMFTM, LGPL-3.0)
-cad/             파라메트릭 F1 형상 생성 (예정)
+cad/             파라메트릭 2026 F1 형상 (car2026.py), 출력은 cad/out/ (git 제외)
 cfd/             OpenFOAM 케이스 템플릿 (예정, 결과 파일은 git 제외)
 surrogate/       공력 서로게이트 모델 (예정)
 web/             웹 데모 (예정)

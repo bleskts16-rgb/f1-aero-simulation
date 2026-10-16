@@ -33,3 +33,6 @@ data/raw/
 Thumbs.db
 .vscode/
 .idea/
+
+# Generated CAD (rebuild with scripts/build_car.py)
+cad/out/
