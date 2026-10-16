@@ -4,6 +4,7 @@ CL*A / CD*A per part, and a run-time estimate for longer runs / other machines.
     python scripts/cfd_report.py cfd/runs/baseline_half_coarse
     python scripts/cfd_report.py cfd/runs/baseline_half_coarse --iters 2000 --cores 8 16 --cells 4e6
     python scripts/cfd_report.py cfd/runs/baseline_half_coarse --cores 6 --speed-factor 2   # faster PC
+    python scripts/cfd_report.py cfd/runs/baseline_half_coarse --aref 1.474   # also CL, CD
 
 Forces come from the half model and are doubled for the full car.
 CL*A is positive for downforce (same convention as lapsim.Vehicle.cla).
@@ -87,6 +88,8 @@ def main():
     ap.add_argument("--cells", type=float, nargs="*", default=[1e6, 4e6, 10e6])
     ap.add_argument("--speed-factor", type=float, default=1.0,
                     help="per-core speed of the target machine relative to this one (assumption)")
+    ap.add_argument("--aref", type=float,
+                    help="reference (frontal) area of the full car [m^2] to also print CL and CD")
     args = ap.parse_args()
     case = (ROOT / args.case).resolve()
     meta = json.loads((case / "case.json").read_text(encoding="utf-8"))
@@ -133,10 +136,14 @@ def main():
     if f:
         print(f"\nforces (full car, mean of last 20 % of {next(iter(f.values()))['iters']} iterations; "
               f"not converged unless the run was long enough):")
-        print("  part          CL*A [m^2]  CD*A [m^2]")
+        a = args.aref
+        print("  part          CL*A [m^2]  CD*A [m^2]" + (f"   CL (A={a:g})   CD" if a else ""))
         for k in ("front_wing", "body", "rear_wing", "wheels", "total"):
             if k in f:
-                print(f"  {k:<12}{f[k]['cla']:11.3f}{f[k]['cda']:12.3f}")
+                row = f"  {k:<12}{f[k]['cla']:11.3f}{f[k]['cda']:12.3f}"
+                if a:
+                    row += f"{f[k]['cla'] / a:13.3f}{f[k]['cda'] / a:8.3f}"
+                print(row)
         if "total" in f:
             tr = f["total"]["cla_trace"]
             n = len(tr)

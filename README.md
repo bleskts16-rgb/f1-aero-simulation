@@ -20,7 +20,7 @@ F1 셋업 파라미터(윙 각도, 라이드 하이트, 사이드포드 형상 �
 |---|---|---|
 | 1 | QSS 랩타임 시뮬레이터 + 실제 F1 텔레메트리 검증 | ✅ 1차 완료 |
 | 2 | 파라메트릭 단순화 F1 형상 (CadQuery, 2026 기술규정 기준) | 🔧 1차 형상 완료 |
-| 3 | OpenFOAM 자동 해석 파이프라인 (multi-fidelity) | 🔧 coarse 파이프라인 동작 |
+| 3 | OpenFOAM 자동 해석 파이프라인 (multi-fidelity) | 🔧 파이프라인 동작, 격자 독립성 확인 중 |
 | 4 | 공력 서로게이트 학습 → 랩 시뮬 연결 | ⏳ |
 | 5 | 웹 데모 + LLM 에이전트 | ⏳ |
 
@@ -67,34 +67,47 @@ Reference Volume을 따라 CadQuery로 만든 파라메트릭 형상입니다.
 
 ![car2026](docs/figures/car2026_baseline.png)
 
-## 3단계: OpenFOAM 해석 파이프라인 (1차)
+## 3단계: OpenFOAM 해석 파이프라인
 
-반쪽 모델 정상 RANS 해석입니다(OpenFOAM v2512, `simpleFoam`, k-ω SST).
-- **경계 조건**: Y = 0 대칭면, 차량과 같은 속도로 움직이는 노면, 노면 속도에 맞춰 회전하는 타이어
-- **격자**: `snappyHexMesh`로 만들고, 단계(coarse/medium/fine)는 배경 셀 크기와 프리즘 층 수로 바꿉니다.
-- **결과**: 부품별(앞날개·차체·뒷날개·바퀴) 힘을 매 반복 기록하고, `cfd_report.py`가 전체 차량 기준 CL·A·CD·A로 바꿔 줍니다.
-- **실행 위치**: Windows에서는 `run_cfd.py`가 케이스를 WSL 안으로 복사해 돌리고, 로그와 힘 결과만 되가져옵니다.
+반쪽 모델 정상 RANS 해석입니다(OpenFOAM v2512, `simpleFoam`, k-ω SST, 벽함수).
+- **경계 조건**: Y = 0 대칭면, 차량과 같은 속도(50 m/s)로 움직이는 노면, 노면 속도에 맞춰 회전하는 타이어
+- **격자**: `snappyHexMesh`, 프리즘 3층. 단계 L1~L5는 배경 셀 크기만 1.33배씩 줄이고 나머지 설정은 같습니다(GCI용 계열).
+- **결과**: 부품별(앞날개·차체·뒷날개·바퀴) 힘을 매 반복 기록합니다. `cfd_report.py`가 전체 차량 기준 CL·A·CD·A(`--aref`를 주면 CL·CD)로 바꿔 줍니다. y+도 함께 출력합니다.
+- **실행 위치**: 가벼운 해석은 로컬(Windows에서는 WSL로 자동 실행), 무거운 해석은 클러스터(Slurm)에서 `grid_study.py`로 돌립니다.
+- **보기**: 각 케이스 폴더의 `pv_view.py`(`paraview --script=pv_view.py`)가 표면 Cp와 중심선 속도 화면을 바로 띄웁니다.
 
-| 격자 | 배경 셀 | 날개 표면 셀 | 프리즘 층 | 셀 수 |
-|---|---|---|---|---|
-| coarse | 400 mm | 6.25 mm | 없음 | 0.56M |
-| medium | 250 mm | 3.9 mm | 3 | (약 2–3M 예상) |
-| fine | 200 mm | 3.1 mm | 5 | (미측정) |
+| 격자 | 배경 셀 | 날개 표면 셀 | 셀 수 | 메싱 | 3000회 해석 | 메모리 최대 |
+|---|---|---|---|---|---|---|
+| L1 | 400 mm | 6.3 mm | 0.77M | 1.0분 (8코어) | 19.5분 (8코어) | 2.6 GB |
+| L2 | 300 mm | 4.7 mm | 1.45M | 1.3분 (16코어) | 18.7분 (16코어) | 5.0 GB |
+| L3 | 225 mm | 3.5 mm | 2.88M | 2.4분 (32코어) | 19.8분 (32코어) | 10.3 GB |
+| L4 | 169 mm | 2.6 mm | 5.71M | 5.1분 (32코어) | 40.6분 (32코어) | 15.5 GB |
+| L5 | 127 mm | 2.0 mm | 11.0M | 7.5분 (64코어) | 44.9분 (64코어) | 30.2 GB |
 
-**첫 시간 측정** (회사 PC: i5-4570 4코어, WSL 메모리 약 3 GB, coarse 격자, 300회 반복)
+계산 비용은 클러스터에서 4.0~5.2 코어·초 / (100만 셀 × 1회 반복)이었습니다.
+메모리는 대략 100만 셀당 2.7 GB입니다. 그래서 RAM 32 GB인 데스크톱(WSL 약 26 GB 할당)에서는 L4까지가 한계입니다.
+(초기 로컬 측정: i5-4570 4코어, 층 없는 0.56M 셀 격자, 1.79 s/반복, 12.8 코어·초)
 
-| 단계 | 시간 | 메모리 최대 |
-|---|---|---|
-| 메싱 (snappyHexMesh 포함) | 3.9분 | 약 1.0 GB |
-| simpleFoam 300회 | 10.9분 (1.79 s/반복) | 약 0.9 GB |
-| 계산 비용 | 12.8 코어·초 / (100만 셀 × 1회 반복) | |
+![CFD Cp](docs/figures/cfd_coarse_cp.png)
 
-집 PC 예상 (i5-12400 6코어, 코어당 속도를 위 PC의 2배로 **가정**, 2000회 반복 기준):
-0.56M 셀 ≈ 0.3시간, 2M ≈ 1.2시간, 5M ≈ 3.0시간, 10M ≈ 5.9시간.
-실제 값은 집 PC에서 같은 coarse 케이스를 한 번 돌려 `cfd_report.py`로 확인해야 합니다.
+### 격자 독립성 1차 (`grid1`, 2026-10-16)
 
-**주의**: 300회 반복은 시간 측정용입니다. 힘은 150회 이후 거의 일정하지만(CL·A ≈ 1.3, CD·A ≈ 1.2), 잔차가 아직 1e-3 수준이라 수렴했다고 보기는 어렵습니다.
-형상(G0)과 격자도 거칠어서 이 값을 랩 시뮬레이터에 넣을 단계는 아닙니다. 특히 날개 요소 사이 슬롯 간격(10–12 mm)에 셀이 1–2개밖에 들어가지 않습니다.
+두 설계를 L1~L5에서 각각 3000회 돌리고, 마지막 1000회 평균을 비교했습니다. 반복 평균의 통계 오차는 CL·A ±0.02 m², CD·A ±0.005 m² 이내입니다.
+- **baseline**: 기본 플랩 각도
+- **low_drag**: 앞 플랩 −10°, 뒷 플랩 −25°. 2026 가변 공력의 직선 모드를 흉내 낸 설정입니다.
+
+![grid study](docs/results/grid1/grid_study.png)
+
+- **CL·A는 수렴하지 않았습니다.** 격자를 키울수록 오르내리고, L4→L5에서도 약 30% 바뀝니다(baseline 1.44 → 1.88 m²). 그래서 L3~L5에 대해 Richardson 외삽과 GCI는 성립하지 않습니다(점근 영역 아님). 변화의 대부분은 **차체(바닥 아래)**에서 나옵니다(차체 CL·A −0.14 → +0.16).
+- **CD·A는 L1~L4에서 ±2% 안**이지만, L5에서 4% 더 내려갑니다. 단조 수렴이 아니어서 이것도 GCI는 계산하지 않았습니다.
+- **두 설계의 차이:** ΔCD·A는 L4·L5에서 −0.181, −0.184로 안정적입니다. ΔCL·A는 L3 −0.46, L4 −0.48, L5 −0.54로 아직 변하고 있습니다.
+- **판단:** high fidelity 격자와 low fidelity 격자는 아직 정할 수 없습니다. 원인 후보는 두 가지입니다.
+  1. 바닥 아래 틈(30~80 mm)이 배경 격자에만 의존해 해상됩니다.
+  2. 프리즘 층이 표면 셀에 비례해 얇아지면서 y+(차체 평균 220 → 90)가 단계마다 바뀌어, 벽함수 조건이 함께 변합니다.
+
+  다음 연구(`grid2`)에서는 바닥 아래 리파인 박스와 절대 두께로 고정한 첫 층을 넣고 다시 확인합니다.
+
+전체 표·부품별 값·층 품질은 [docs/results/grid1/grid_study.md](docs/results/grid1/grid_study.md)에 있습니다.
 
 ## 사용법
 
@@ -112,9 +125,16 @@ python scripts/build_car.py                             # 2026 단순화 형상 
 python scripts/build_car.py --half                      # 대칭면 해석용 반쪽 모델
 python scripts/build_car.py --fw-flap-delta -10 --rw-flap-delta -25 --name low_drag
 
-python scripts/make_cfd_case.py --level coarse --np 4      # cfd/runs/baseline_half_coarse
-python scripts/run_cfd.py cfd/runs/baseline_half_coarse    # 메싱 + 해석 (Windows는 WSL에서)
-python scripts/cfd_report.py cfd/runs/baseline_half_coarse # 시간·메모리·CL·A/CD·A 정리
+python scripts/make_cfd_case.py --level L1 --np 4          # cfd/runs/baseline_half_L1
+python scripts/run_cfd.py cfd/runs/baseline_half_L1          # 메싱 + 해석 (Windows는 WSL에서)
+python scripts/cfd_report.py cfd/runs/baseline_half_L1 --aref 1.474   # 시간·메모리·CL/CD 정리
+
+# 격자 연구 (클러스터, Slurm). 접속 정보는 환경변수로만 줌: F1CFD_HPC=user@host:port, F1CFD_NODES="노드1 노드2"
+python scripts/grid_study.py prepare grid1 --configs baseline=cad/out/baseline_half low_drag=cad/out/low_drag_half
+python scripts/grid_study.py push grid1        # 전송 + 제출 (prepare --add 로 단계 추가 후에도 같은 명령)
+python scripts/grid_study.py status grid1
+python scripts/grid_study.py fetch grid1       # 로그와 힘 데이터만 회수
+python scripts/grid_study.py analyze grid1     # GCI, 외삽, 설계 차이(경향) 비교
 ```
 
 ## 구조
@@ -128,6 +148,8 @@ cfd/templates/   OpenFOAM 케이스 템플릿 (반쪽 차량), 실행 케이스�
 surrogate/       공력 서로게이트 모델 (예정)
 web/             웹 데모 (예정)
 docs/figures/    결과 그림
+docs/results/    해석 결과 요약 (격자 연구 등)
+docs/worklog.md  날짜별 작업 기록과 다음 할 일
 ```
 
 ## 데이터 출처

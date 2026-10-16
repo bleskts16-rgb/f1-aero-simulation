@@ -5,12 +5,13 @@
     python scripts/run_cfd.py cfd/runs/baseline_half_coarse  # mesh + solve (WSL on Windows)
     python scripts/cfd_report.py cfd/runs/baseline_half_coarse
 
-Mesh levels share the same refinement layout; only the background cell size (and
-prism layers) change, so cell counts scale by roughly (h0_a / h0_b)^3 between levels.
+Mesh levels L1..L5 share the same refinement layout and prism-layer settings; only the
+background cell size h0 changes, by a constant ratio r = 4/3 per level, so every cell
+in the domain shrinks by the same factor (what a GCI / Richardson study needs).
+Cell counts grow by roughly r^3 = 2.37 per level.
 """
 import argparse
 import json
-import math
 import re
 import shutil
 import sys
@@ -23,11 +24,9 @@ TEMPLATE = ROOT / "cfd" / "templates" / "car_half"
 PARTS = ("body", "front_wing", "rear_wing", "wheels_front", "wheels_rear")
 
 # background cell size h0 [m]; refinement level n gives h0 / 2^n
-LEVELS = {
-    "coarse": dict(h0=0.40, layers=0),
-    "medium": dict(h0=0.25, layers=3),
-    "fine":   dict(h0=0.20, layers=5),
-}
+RATIO = 4 / 3
+LEVELS = {f"L{i + 1}": dict(h0=round(0.40 / RATIO ** i, 4)) for i in range(5)}
+LAYERS = 3
 REFINE = dict(LV_WAKE=2, LV_NEAR=3, LV_BODY_MIN=4, LV_BODY_MAX=5,
               LV_WING_MIN=5, LV_WING_MAX=6, LV_WINGBOX=5)
 
@@ -49,21 +48,23 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--geom", default="cad/out/baseline_half",
                     help="folder from build_car.py --half (STL in m + params.json)")
-    ap.add_argument("--level", choices=LEVELS, default="coarse")
+    ap.add_argument("--level", choices=LEVELS, default="L1")
+    ap.add_argument("--layers", type=int, default=LAYERS, help="prism layers (0 = none)")
     ap.add_argument("--h0", type=float, help="override background cell size [m]")
     ap.add_argument("--np", type=int, default=4, help="MPI ranks")
     ap.add_argument("--iter", type=int, default=300, help="simpleFoam iterations")
     ap.add_argument("--u", type=float, default=50.0, help="freestream speed [m/s]")
     ap.add_argument("--name")
+    ap.add_argument("--outdir", default="cfd/runs", help="parent folder for the case")
     args = ap.parse_args()
 
     geom = (ROOT / args.geom).resolve()
     p = json.loads((geom / "params.json").read_text(encoding="utf-8"))
-    lev = dict(LEVELS[args.level])
+    lev = dict(LEVELS[args.level], layers=args.layers)
     if args.h0:
         lev["h0"] = args.h0
     name = args.name or f"{geom.name}_{args.level}"
-    case = ROOT / "cfd" / "runs" / name
+    case = ROOT / args.outdir / name
     if case.exists():
         sys.exit(f"{case.relative_to(ROOT)} exists - remove it or pick --name")
 
@@ -78,8 +79,9 @@ def main():
         sys.exit(f"{geom} is not a Y >= 0 half model (y min {ymin:.3f} m); use build_car.py --half")
 
     h0, u, nu = lev["h0"], args.u, 1.5e-5
-    xmin, xlen, ylen, zlen = -6.0, 22.0, 5.0, 5.0
-    nx, ny, nz = (math.ceil(L / h0) for L in (xlen, ylen, zlen))
+    # fixed domain for every level (blockage ~3 %); cells are near-cubic, never resized
+    xmin, xlen, ylen, zlen = -6.0, 22.0, 5.2, 5.2
+    nx, ny, nz = (max(1, round(L / h0)) for L in (xlen, ylen, zlen))
     k = 1.5 * (0.005 * u) ** 2
     rf = p["tyre_f_diameter"] / 2000
     rr = p["tyre_r_diameter"] / 2000
@@ -87,7 +89,7 @@ def main():
     wb = p["wheelbase"] / 1000
     values = dict(
         NU=nu, U_INF=u, RHO=1.2, K_INF=f"{k:.6g}", OMEGA_INF=f"{k / (10 * nu):.6g}",
-        XMIN=xmin, XMAX=round(xmin + nx * h0, 6), YMAX=round(ny * h0, 6), ZMAX=round(nz * h0, 6),
+        XMIN=xmin, XMAX=xmin + xlen, YMAX=ylen, ZMAX=zlen,
         NX=nx, NY=ny, NZ=nz, NP=args.np, N_ITER=args.iter, COFR_X=wb / 2,
         WF_X=0.0, WF_Z=round(rf - sq, 6), WF_OMEGA=f"{-u / rf:.6g}",
         WR_X=wb, WR_Z=round(rr - sq, 6), WR_OMEGA=f"{-u / rr:.6g}",

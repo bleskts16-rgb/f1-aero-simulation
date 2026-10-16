@@ -1,0 +1,78 @@
+{
+  "study": "grid1",
+  "configs": {
+    "baseline": "cad/out/baseline_half",
+    "low_drag": "cad/out/low_drag_half"
+  },
+  "levels": [
+    "L1",
+    "L2",
+    "L3",
+    "L4",
+    "L5"
+  ],
+  "iter": 3000,
+  "u": 50.0,
+  "cases": [
+    {
+      "name": "baseline_L1",
+      "config": "baseline",
+      "level": "L1",
+      "np": 8
+    },
+    {
+      "name": "baseline_L2",
+      "config": "baseline",
+      "level": "L2",
+      "np": 16
+    },
+    {
+      "name": "baseline_L3",
+      "config": "baseline",
+      "level": "L3",
+      "np": 32
+    },
+    {
+      "name": "baseline_L4",
+      "config": "baseline",
+      "level": "L4",
+      "np": 32
+    },
+    {
+      "name": "low_drag_L1",
+      "config": "low_drag",
+      "level": "L1",
+      "np": 8
+    },
+    {
+      "name": "low_drag_L2",
+      "config": "low_drag",
+      "level": "L2",
+      "np": 16
+    },
+    {
+      "name": "low_drag_L3",
+      "config": "low_drag",
+      "level": "L3",
+      "np": 32
+    },
+    {
+      "name": "low_drag_L4",
+      "config": "low_drag",
+      "level": "L4",
+      "np": 32
+    },
+    {
+      "name": "baseline_L5",
+      "config": "baseline",
+      "level": "L5",
+      "np": 64
+    },
+    {
+      "name": "low_drag_L5",
+      "config": "low_drag",
+      "level": "L5",
+      "np": 64
+    }
+  ]
+}

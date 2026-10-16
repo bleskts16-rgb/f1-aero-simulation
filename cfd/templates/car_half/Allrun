@@ -1,12 +1,20 @@
 #!/bin/bash
-# Mesh + solve the half-car case, recording wall time per step (log.timing) and
-# system memory in use every 2 s (log.mem). Re-running skips finished steps.
+# Mesh + solve the half-car case, recording wall time per step (log.timing) and the
+# resident memory of this run's own processes every 2 s (log.mem, MB; valid on shared
+# nodes too). Re-running skips finished steps.
 cd "$(dirname "$0")" || exit 1
 [ -n "$WM_PROJECT_DIR" ] || { echo "OpenFOAM environment not loaded"; exit 1; }
 
 NP=$(foamDictionary -entry numberOfSubdomains -value system/decomposeParDict)
 
-( while :; do echo "$(date +%s.%N) $(free -m | awk '/^Mem:/{print $3}')" >> log.mem; sleep 2; done ) &
+ROOT_PID=$$
+echo "# rss_mb of all descendants of Allrun" >> log.mem
+( while :; do
+    rss=$(ps -eo pid=,ppid=,rss= | awk -v root=$ROOT_PID '
+        {p[$1]=$2; r[$1]=$3}
+        END {s=0; for (i in p) {j=i; n=0; while (j>1 && j!=root && n<50) {j=p[j]; n++} if (j==root) s+=r[i]} print int(s/1024)}')
+    echo "$(date +%s.%N) $rss" >> log.mem; sleep 2
+  done ) &
 SAMPLER=$!
 trap 'kill $SAMPLER 2>/dev/null' EXIT
 
