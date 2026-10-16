@@ -1,0 +1,45 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  f1-aero-simulation : simplified 2026 car, half model (Y >= 0)
+  Template: cfd/templates/car_half, filled in by scripts/make_cfd_case.py
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    object      U;
+}
+
+dimensions      [0 1 -1 0 0 0 0];
+internalField   uniform (@U_INF@ 0 0);
+
+boundaryField
+{
+    #includeEtc "caseDicts/setConstraintTypes"
+    symmetry        { type symmetryPlane; }   // patch name would otherwise pick up the "symmetry" constraint entry
+    inlet           { type fixedValue; value uniform (@U_INF@ 0 0); }
+    outlet
+    {
+        type            inletOutlet;
+        inletValue      uniform (0 0 0);
+        value           $internalField;
+    }
+    ground          { type fixedValue; value uniform (@U_INF@ 0 0); }   // moving road
+    "(top|side)"    { type slip; }
+    "(body|front_wing|rear_wing)" { type noSlip; }
+    // tyre surface speed matches the road: omega = -U/R about +Y
+    wheels_front
+    {
+        type            rotatingWallVelocity;
+        origin          (@WF_X@ 0 @WF_Z@);
+        axis            (0 1 0);
+        omega           @WF_OMEGA@;
+    }
+    wheels_rear
+    {
+        type            rotatingWallVelocity;
+        origin          (@WR_X@ 0 @WR_Z@);
+        axis            (0 1 0);
+        omega           @WR_OMEGA@;
+    }
+}

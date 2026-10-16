@@ -1,0 +1,35 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  f1-aero-simulation : simplified 2026 car, half model (Y >= 0)
+  Template: cfd/templates/car_half, filled in by scripts/make_cfd_case.py
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+
+// Half domain: road on Z=0, symmetry plane on Y=0, flow in +X (FIA axes)
+scale   1;
+
+vertices
+(
+    (@XMIN@ 0 0)      (@XMAX@ 0 0)      (@XMAX@ @YMAX@ 0)      (@XMIN@ @YMAX@ 0)
+    (@XMIN@ 0 @ZMAX@) (@XMAX@ 0 @ZMAX@) (@XMAX@ @YMAX@ @ZMAX@) (@XMIN@ @YMAX@ @ZMAX@)
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) (@NX@ @NY@ @NZ@) simpleGrading (1 1 1)
+);
+
+boundary
+(
+    inlet    { type patch;         faces ((0 4 7 3)); }
+    outlet   { type patch;         faces ((1 2 6 5)); }
+    ground   { type wall;          faces ((0 3 2 1)); }
+    top      { type patch;         faces ((4 5 6 7)); }
+    side     { type patch;         faces ((3 7 6 2)); }
+    symmetry { type symmetryPlane; faces ((0 1 5 4)); }
+);

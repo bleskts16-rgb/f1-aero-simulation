@@ -1,0 +1,23 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  f1-aero-simulation : simplified 2026 car, half model (Y >= 0)
+  Template: cfd/templates/car_half, filled in by scripts/make_cfd_case.py
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      p;
+}
+
+dimensions      [0 2 -2 0 0 0 0];
+internalField   uniform 0;
+
+boundaryField
+{
+    #includeEtc "caseDicts/setConstraintTypes"
+    symmetry        { type symmetryPlane; }   // patch name would otherwise pick up the "symmetry" constraint entry
+    outlet          { type fixedValue; value uniform 0; }
+    "(inlet|ground|top|side)" { type zeroGradient; }
+    car             { type zeroGradient; }
+}

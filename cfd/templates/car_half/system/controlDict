@@ -1,0 +1,56 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  f1-aero-simulation : simplified 2026 car, half model (Y >= 0)
+  Template: cfd/templates/car_half, filled in by scripts/make_cfd_case.py
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+
+application     simpleFoam;
+startFrom       latestTime;
+startTime       0;
+stopAt          endTime;
+endTime         @N_ITER@;
+deltaT          1;
+writeControl    timeStep;
+writeInterval   @N_ITER@;
+purgeWrite      1;
+writeFormat     binary;
+writePrecision  6;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable true;
+
+_forces
+{
+    type            forces;
+    libs            (forces);
+    writeControl    timeStep;
+    writeInterval   1;
+    log             false;
+    rho             rhoInf;
+    rhoInf          @RHO@;
+    CofR            (@COFR_X@ 0 0);
+}
+
+functions
+{
+    forces_body       { $_forces; patches (body); }
+    forces_front_wing { $_forces; patches (front_wing); }
+    forces_rear_wing  { $_forces; patches (rear_wing); }
+    forces_wheels     { $_forces; patches (wheels_front wheels_rear); }
+    forces_total      { $_forces; patches (body front_wing rear_wing wheels_front wheels_rear); }
+    residuals
+    {
+        type            solverInfo;
+        libs            (utilityFunctionObjects);
+        fields          (U p k omega);
+    }
+}
+
+#remove _forces

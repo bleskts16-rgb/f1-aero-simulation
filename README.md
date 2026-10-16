@@ -20,7 +20,7 @@ F1 셋업 파라미터(윙 각도, 라이드 하이트, 사이드포드 형상 �
 |---|---|---|
 | 1 | QSS 랩타임 시뮬레이터 + 실제 F1 텔레메트리 검증 | ✅ 1차 완료 |
 | 2 | 파라메트릭 단순화 F1 형상 (CadQuery, 2026 기술규정 기준) | 🔧 1차 형상 완료 |
-| 3 | OpenFOAM 자동 해석 파이프라인 (multi-fidelity) | ⏳ |
+| 3 | OpenFOAM 자동 해석 파이프라인 (multi-fidelity) | 🔧 coarse 파이프라인 동작 |
 | 4 | 공력 서로게이트 학습 → 랩 시뮬 연결 | ⏳ |
 | 5 | 웹 데모 + LLM 에이전트 | ⏳ |
 
@@ -67,6 +67,35 @@ Reference Volume을 따라 CadQuery로 만든 파라메트릭 형상입니다.
 
 ![car2026](docs/figures/car2026_baseline.png)
 
+## 3단계: OpenFOAM 해석 파이프라인 (1차)
+
+반쪽 모델 정상 RANS 해석입니다(OpenFOAM v2512, `simpleFoam`, k-ω SST).
+- **경계 조건**: Y = 0 대칭면, 차량과 같은 속도로 움직이는 노면, 노면 속도에 맞춰 회전하는 타이어
+- **격자**: `snappyHexMesh`로 만들고, 단계(coarse/medium/fine)는 배경 셀 크기와 프리즘 층 수로 바꿉니다.
+- **결과**: 부품별(앞날개·차체·뒷날개·바퀴) 힘을 매 반복 기록하고, `cfd_report.py`가 전체 차량 기준 CL·A·CD·A로 바꿔 줍니다.
+- **실행 위치**: Windows에서는 `run_cfd.py`가 케이스를 WSL 안으로 복사해 돌리고, 로그와 힘 결과만 되가져옵니다.
+
+| 격자 | 배경 셀 | 날개 표면 셀 | 프리즘 층 | 셀 수 |
+|---|---|---|---|---|
+| coarse | 400 mm | 6.25 mm | 없음 | 0.56M |
+| medium | 250 mm | 3.9 mm | 3 | (약 2–3M 예상) |
+| fine | 200 mm | 3.1 mm | 5 | (미측정) |
+
+**첫 시간 측정** (회사 PC: i5-4570 4코어, WSL 메모리 약 3 GB, coarse 격자, 300회 반복)
+
+| 단계 | 시간 | 메모리 최대 |
+|---|---|---|
+| 메싱 (snappyHexMesh 포함) | 3.9분 | 약 1.0 GB |
+| simpleFoam 300회 | 10.9분 (1.79 s/반복) | 약 0.9 GB |
+| 계산 비용 | 12.8 코어·초 / (100만 셀 × 1회 반복) | |
+
+집 PC 예상 (i5-12400 6코어, 코어당 속도를 위 PC의 2배로 **가정**, 2000회 반복 기준):
+0.56M 셀 ≈ 0.3시간, 2M ≈ 1.2시간, 5M ≈ 3.0시간, 10M ≈ 5.9시간.
+실제 값은 집 PC에서 같은 coarse 케이스를 한 번 돌려 `cfd_report.py`로 확인해야 합니다.
+
+**주의**: 300회 반복은 시간 측정용입니다. 힘은 150회 이후 거의 일정하지만(CL·A ≈ 1.3, CD·A ≈ 1.2), 잔차가 아직 1e-3 수준이라 수렴했다고 보기는 어렵습니다.
+형상(G0)과 격자도 거칠어서 이 값을 랩 시뮬레이터에 넣을 단계는 아닙니다. 특히 날개 요소 사이 슬롯 간격(10–12 mm)에 셀이 1–2개밖에 들어가지 않습니다.
+
 ## 사용법
 
 ```bash
@@ -82,6 +111,10 @@ python scripts/calibrate_aero.py Monza Budapest         # 서킷별 공력 역�
 python scripts/build_car.py                             # 2026 단순화 형상 (전체)
 python scripts/build_car.py --half                      # 대칭면 해석용 반쪽 모델
 python scripts/build_car.py --fw-flap-delta -10 --rw-flap-delta -25 --name low_drag
+
+python scripts/make_cfd_case.py --level coarse --np 4      # cfd/runs/baseline_half_coarse
+python scripts/run_cfd.py cfd/runs/baseline_half_coarse    # 메싱 + 해석 (Windows는 WSL에서)
+python scripts/cfd_report.py cfd/runs/baseline_half_coarse # 시간·메모리·CL·A/CD·A 정리
 ```
 
 ## 구조
@@ -91,7 +124,7 @@ lapsim/          랩타임 시뮬레이터 (track, vehicle, qss, reference)
 scripts/         실행·검증·보정 스크립트
 data/tracks/     서킷 중심선 데이터 (TUMFTM, LGPL-3.0)
 cad/             파라메트릭 2026 F1 형상 (car2026.py), 출력은 cad/out/ (git 제외)
-cfd/             OpenFOAM 케이스 템플릿 (예정, 결과 파일은 git 제외)
+cfd/templates/   OpenFOAM 케이스 템플릿 (반쪽 차량), 실행 케이스는 cfd/runs/ (git 제외)
 surrogate/       공력 서로게이트 모델 (예정)
 web/             웹 데모 (예정)
 docs/figures/    결과 그림

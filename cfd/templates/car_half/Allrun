@@ -1,0 +1,37 @@
+#!/bin/bash
+# Mesh + solve the half-car case, recording wall time per step (log.timing) and
+# system memory in use every 2 s (log.mem). Re-running skips finished steps.
+cd "$(dirname "$0")" || exit 1
+[ -n "$WM_PROJECT_DIR" ] || { echo "OpenFOAM environment not loaded"; exit 1; }
+
+NP=$(foamDictionary -entry numberOfSubdomains -value system/decomposeParDict)
+
+( while :; do echo "$(date +%s.%N) $(free -m | awk '/^Mem:/{print $3}')" >> log.mem; sleep 2; done ) &
+SAMPLER=$!
+trap 'kill $SAMPLER 2>/dev/null' EXIT
+
+step() {   # step <name> <command...> ; skipped when log.<name> already ends cleanly
+    local name=$1; shift
+    if [ -f "log.$name" ] && grep -q "^End" "log.$name"; then
+        echo "skip $name (log.$name complete)"; return 0
+    fi
+    echo "$name start $(date +%s.%N)" >> log.timing
+    echo "running $name ..."
+    "$@" > "log.$name" 2>&1
+    local rc=$?
+    echo "$name end $(date +%s.%N) rc=$rc" >> log.timing
+    if [ $rc -ne 0 ]; then echo "step $name failed, see log.$name"; exit $rc; fi
+}
+par() { mpirun -np "$NP" "$@" -parallel; }
+
+step surfaceFeatureExtract surfaceFeatureExtract
+step blockMesh             blockMesh
+step decomposePar          decomposePar -force
+step snappyHexMesh         par snappyHexMesh -overwrite
+step checkMesh             par checkMesh -constant
+
+if [ ! -d processor0/0 ]; then
+    for d in processor*; do cp -r 0.orig "$d/0"; done
+fi
+step potentialFoam         par potentialFoam -writephi
+step simpleFoam            par simpleFoam
