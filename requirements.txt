@@ -5,3 +5,4 @@ pandas>=2.2
 osqp>=1.0
 fastf1>=3.4
 cadquery>=2.5
+pyvista>=0.44

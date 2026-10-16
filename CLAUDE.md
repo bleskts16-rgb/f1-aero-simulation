@@ -32,6 +32,15 @@ F1 셋업 → 파라메트릭 CAD → OpenFOAM → 공력 서로게이트 → QS
 - 힘은 마지막 1000회 평균과 자기상관을 보정한 표준오차로 본다.
   Richardson 외삽·GCI는 단조 수렴이고 0.5 ≤ p ≤ 3이며 단계 간 변화가 통계 오차보다 클 때만 쓴다(`grid_study.py`가 판정).
 
+## CAD 작업 규칙 (text-to-cad 참고, [docs/references/text-to-cad-f1.md](docs/references/text-to-cad-f1.md))
+- 형상을 바꾸면 `build_car.py`를 돌려 규정 점검과 `cad/qa.py` 검사(로프트 이탈, 양의 부피, 불리언 적합성, STL 닫힘)가 모두 OK인지 확인한다.
+  NG가 있으면 exit 1이다. **계산 실패나 확인하지 않은 항목은 통과가 아니다.** 보고할 때 실제로 돌린 검사와 확인하지 않은 항목을 구분한다.
+- 형상을 바꾼 뒤에는 렌더를 직접 열어 확인한다. `render_car.py`(pyvista)는 깊이 정렬이 정확하고, `build_car.py`의 matplotlib 6면 그림은 빠른 확인용이다.
+- 형상 수준: **G0**는 규정 볼륨 형상이고 grid 연구의 기준이라 바꾸지 않는다. **G1**은 FIA 2026 공식 컨셉카 렌더를 닮게 한 형상이다(`--g1`, `--fia`).
+- 형상을 바꾸지 않는 수정(검사, 리팩터)은 baseline STL 해시가 그대로인지 확인한다.
+- 지정한 치수와 특징(필렛 반경, 슬롯 간격 등)을 조용히 줄이거나 빼지 않는다. 안 되면 보고한다.
+- `third_party/text-to-cad/`는 읽기 전용 참고 자료다. 수치를 가져올 때는 좌표를 변환하고(x_우리 = −x_그쪽), 출처 커밋을 남긴다.
+
 ## 사용자 선호
 - 답변은 한국어로 한다. 사용자는 코드를 읽을 수는 있지만 직접 작성하지는 않는다. 코드는 Claude가 쓰고, 설명은 목적 위주로 한다.
 - 그래프는 학술 스타일(matplotlib, serif, 안쪽 눈금, 박스 축, 차분한 남색/적색). 표는 논문 부록 형식.
@@ -41,9 +50,14 @@ F1 셋업 → 파라메트릭 CAD → OpenFOAM → 공력 서로게이트 → QS
 
 ## 자주 쓰는 명령
 ```bash
-python scripts/build_car.py --half                                   # 반쪽 형상 + 규정 점검
+python scripts/build_car.py --half                                   # 반쪽 형상 + 규정 점검 (G0 baseline)
+python scripts/build_car.py --half --details                         # 헤일로·서스펜션·웨이크 보드·미러 포함 (G0)
+python scripts/build_car.py --half --fia                             # G1(FIA 렌더 스타일) + 상세 부품 → cad/out/fia2026_half
+python scripts/render_car.py baseline_half fia2026_half              # pyvista 3D 렌더·비교 → docs/figures/render_*.png
+$env:F1_CAR="fia2026_half"; paraview --script=scripts/pv_car.py      # ParaView로 형상 보기 (PowerShell, 저장소 루트에서)
 python scripts/make_cfd_case.py --level L1 --np 4                    # 로컬 케이스
 python scripts/run_cfd.py cfd/runs/baseline_half_L1                  # WSL에서 메싱 + 해석
 python scripts/cfd_report.py cfd/runs/baseline_half_L1 --aref 1.474  # 시간·메모리·CL/CD
 python scripts/grid_study.py prepare|push|status|fetch|analyze <study>
+python scripts/extract_ttc_reference.py                              # 참고 모델 바닥 수치표 → docs/references/
 ```

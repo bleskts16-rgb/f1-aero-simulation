@@ -4,6 +4,95 @@
 
 ---
 
+## 2026-10-17 (집 PC)
+
+### 한 일
+1. **G1 뒷날개 엔드플레이트**: FIA 렌더처럼 크게 만들었다. XR+225~650, Z 440~878이고, 모서리는 둥글고 앞 가장자리는 아래로 휘어 내려온다.
+   - 외곽은 직선과 접선 원호로 만든다(`_rounded_outline`, text-to-cad `_corner_pts` 방식).
+   - 처음에는 주기 스플라인을 썼는데 꼭짓점 밖으로 부풀었다. 높이 918 mm로 규정 880을 넘어서, **QA가 NG로 잡았다.**
+   - 뒷타이어 간격은 49 mm다.
+2. **G1 에어박스**: 운전자 머리 뒤 롤후프 위치에 둥근 삼각형 단면 로프트(꼭대기 955 mm, RV-EC 970 이하)를 붙였다.
+   - 앞에 **막힌 타원 흡입구**(160×124 mm, 깊이 110 mm)를 판다. CFD 차체를 닫힌 형상으로 유지하려고 내부 유로는 만들지 않는다.
+3. 검사: G0 baseline STL MD5는 그대로다. `--fia` 반쪽과 전체 모두 모든 항목 OK다(로프트 airbox 0.3 mm).
+4. **ParaView**:
+   - 집 PC에 ParaView 6.2.0을 설치했다(winget Kitware.ParaView).
+   - `scripts/pv_car.py`를 만들었다. STL을 부품별로 불러오고, 반쪽은 Reflect로 전체를 만들고, 색과 카메라를 맞춘다.
+   - GUI 실행: `$env:F1_CAR="fia2026_half"; paraview --script=scripts/pv_car.py`
+   - 배치 저장: `pvpython scripts/pv_car.py <name> --save <png>`
+
+---
+
+## 2026-10-16 (집 PC)
+
+### 한 일
+1. 집 PC를 정리했다. `git pull`로 회사 PC의 커밋 3개를 받았다. `.venv`에 CadQuery 2.8.0을 설치했다. Smart App Control 차단은 없었다.
+2. **참고 자료 도입**: [text-to-cad](https://github.com/earthtojake/text-to-cad)의 F1 컨셉카와 CAD 스킬 문서를 검토했다.
+   - 필요한 부분만 commit `2457312`로 고정해 `third_party/text-to-cad/`에 넣었다(MIT, 약 330 KB).
+   - 정리 문서: [references/text-to-cad-f1.md](references/text-to-cad-f1.md)
+   - 바닥 수치표를 추출했다(`scripts/extract_ttc_reference.py` → `references/ttc_f1_floor.json`, `figures/ttc_f1_floor_tables.png`).
+3. **형상 QA 추가** (`cad/qa.py`, `build_car.py`):
+   - 정밀 경계 상자: 규정 점검이 제어점 상자 대신 이걸 쓴다.
+   - 고체 수, 양의 부피, BRepCheck, BRepAlgoAPI_Check
+   - **로프트 구간별 이탈 검사**: 기준 30 mm
+   - 내보낸 STL 닫힘 검사: 열린 모서리 수
+   - NG가 있으면 exit 1
+   - 렌더에 아랫면과 뒤 3/4 시점을 추가했다(6면).
+4. 형상은 바꾸지 않았다. baseline 반쪽 STL 5개의 MD5가 수정 전후로 같다.
+5. **상세 부품 추가** (기본값은 꺼짐, `build_car.py --details`, 출력 `cad/out/baseline_detail[_half]`):
+   - **프론트 휠 웨이크 보드**(2026 신설)
+     - 바닥 앞 모서리에 둔다. X 520~1006, |Y| 184~720 mm
+     - 안쪽 15° 정렬, 세로 요소 3개(슬롯 10 mm), 앞전 타워, 바닥 발판
+   - **헤일로**: 55 mm 튜브 고리와 중앙 앞 지주
+   - **서스펜션**: 앞뒤 더블 위시본, 푸시로드, 트랙 로드/토 링크. 단면은 유선형 타원 60×18 mm
+   - 부품마다 STL을 따로 만든다. 그래야 나중에 부품별 힘을 볼 수 있다.
+   - QA에 **부착 검사**(부품이 차체·바퀴에 닿는지, 간극 0.00 mm)를 추가했다. 반쪽과 전체 모두 모든 항목 OK다.
+   - 상세 부품을 끄면 baseline STL MD5가 그대로다.
+6. 참고 기사: [motorsport.tech 2026 aero part 1](https://motorsport.tech/formula-1/f1-2026-aero-regulations-in-focus-part-1-back-to-the-future), formula1.com, The Race(출처는 references 문서에 있다).
+7. **G1 형상 (`--g1`, 전부 켜려면 `--fia` → `cad/out/fia2026[_half]`)**: [formula1.com 2026 공력 규정 해설](https://www.formula1.com/en/latest/article/explained-2026-aerodynamic-regulations-fia-x-mode-z-mode-.26c1CtOzCmN3GfLMywrgb2)의 FIA 공식 컨셉카 렌더를 닮게 했다.
+   - **스푼형 앞날개**: 요소마다 Y 단면 9개로 로프트하고, 끝단을 (y/s)^2.5 × 80 mm 들어 올린다.
+     같은 Y에서는 모든 요소가 같은 양만큼 움직이므로 슬롯 간격이 유지되고, 뿌리 단면은 G0와 같다. 엔드플레이트는 80 mm 키웠다.
+   - **사이드포드**: 앞쪽 아래면을 Z 330/280/220 mm까지 올려 깊은 언더컷을 만들었다. 윗면은 뒤로 갈수록 낮아지고(다운워시), 코크보틀이 더 일찍 좁아진다.
+   - **미러**: 타원체 하우징과 스톨을 달았다. 상세 부품에 포함된다.
+   - QA: 로프트 검사가 Y 단면 로프트(앞날개)도 처리하도록 일반화했다. 모든 항목 OK다. G0 baseline STL MD5는 그대로다.
+8. **3D 렌더 도구** `scripts/render_car.py`: pyvista(VTK) 오프스크린 렌더다. 반쪽 모델은 전체 차량으로 미러링한다.
+   - 6개 시점으로 그리고, 여러 형상을 나란히 비교할 수 있다. 예: `render_baseline_half_vs_fia2026_half.png`
+   - matplotlib 렌더는 면 앞뒤 정렬이 안 돼서 언더컷과 날개 휨을 판단하기 어려웠다.
+   - 집 PC에는 ParaView가 없어서 pyvista를 `requirements.txt`에 추가했다.
+
+### 결과
+- baseline 반쪽과 전체 모두 모든 항목 OK다. STL 열린 모서리는 0이다.
+- 차체 Z 최대 951 mm(규정 ≤ 970)는 경계 상자 과대평가가 아니었다. spine 로프트가 엔진 커버(X≈2000)에서 단면보다 실제로 11 mm 위로 나간 값이다.
+- 로프트 이탈(구간별): centripetal spine 11.1 / sidepods 22.2 mm, chord length spine **161.7 mm**(꼬리), uniform 67~73 mm.
+  전체 상자로만 보면 chord length의 꼬리 부풂이 27 mm로만 보여서 구간별 검사로 바꿨다.
+- 참고 모델의 바닥은 앞차축보다 780 mm 앞에서 시작한다. 이건 원본 자체의 주석과 맞지 않고, 실제 F1과도 다르다.
+- **정정**: 2026 규정은 **평평한 바닥과 더 큰 디퓨저**로 돌아간다(motorsport.tech). 참고 모델의 벤추리 터널은 2022~25형이라 2026에 그대로 쓰지 않는다. 디퓨저와 바닥 가장자리 처리만 참고한다.
+  처음에 "G1 = 터널 바닥"으로 적은 계획은 취소했다.
+
+### 결정
+- 형상의 원본은 CadQuery `cad/car2026.py`로 유지한다. text-to-cad 플러그인과 `cadgen`은 설치하지 않는다.
+- 상세 부품은 옵션으로만 둔다. grid1/grid2의 기준 형상(G0)은 바꾸지 않는다.
+- 외형의 목표는 FIA 공식 2026 컨셉카다. G1이 그쪽을 따르고, grid2가 끝나면 G1을 주 형상으로 할지 정한다.
+- 바닥과 디퓨저 수정은 grid2로 격자 문제를 정리한 **다음에** 한다.
+
+### 남은 문제
+- 웨이크 보드의 위치와 높이는 기사 설명에 맞춘 추정이다. 2026 규정 PDF의 기준 볼륨으로 확인해야 한다.
+- 상세 부품은 CFD에 아직 연결하지 않았다. `make_cfd_case.py`의 `PARTS` 목록과 snappyHexMesh 템플릿에 부품과 리파인 레벨을 추가해야 한다.
+  서스펜션 부재는 60×18 mm로 얇아서 L1~L2 격자에서는 거의 해상되지 않을 것이다.
+- 서스펜션 부재가 바퀴(회전 벽 경계) 안으로 25 mm 들어간다. CFD에서 겹치는 부분이 문제없는지 확인해야 한다.
+- G1 앞날개 끝단 상승(80 mm)과 키운 엔드플레이트가 2026 기준 볼륨(App.1 §18, §19) 안에 있는지 아직 확인하지 않았다. 지금 규정 점검은 FW의 |Y|와 앞 X만 본다.
+- FIA 렌더와 아직 다른 점(뒷날개 엔드플레이트와 에어박스는 10-17에 반영):
+  - 사이드포드 흡입구(지금은 막혀 있음)
+  - 휠 커버
+  - 좁은 바닥 평면
+
+### 다음 할 일
+1. (집) L1 케이스로 실제 시간 측정: 회사 기록의 4번 항목.
+2. (회사) grid2 격자 연구.
+3. 2026 규정 PDF에서 웨이크 보드, 바닥, 디퓨저의 기준 볼륨을 확인하고 형상을 맞춘다.
+4. 상세 부품의 CFD 연결: 템플릿 확장 → `detail_half` L1에서 G0와 비교(부품별 CL·A, CD·A 기여).
+
+---
+
 ## 2026-10-16 (회사 PC)
 
 ### 한 일

@@ -124,6 +124,9 @@ python scripts/calibrate_aero.py Monza Budapest         # 서킷별 공력 역�
 python scripts/build_car.py                             # 2026 단순화 형상 (전체)
 python scripts/build_car.py --half                      # 대칭면 해석용 반쪽 모델
 python scripts/build_car.py --fw-flap-delta -10 --rw-flap-delta -25 --name low_drag
+python scripts/build_car.py --half --details            # 헤일로·서스펜션·프론트 휠 웨이크 보드·미러 포함
+python scripts/build_car.py --half --fia                # FIA 2026 컨셉카 스타일(G1) + 상세 부품
+python scripts/render_car.py baseline_half fia2026_half # 3D 렌더 비교
 
 python scripts/make_cfd_case.py --level L1 --np 4          # cfd/runs/baseline_half_L1
 python scripts/run_cfd.py cfd/runs/baseline_half_L1          # 메싱 + 해석 (Windows는 WSL에서)

@@ -23,15 +23,26 @@ import cadquery as cq
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from cad import car2026, qa  # noqa: E402
 from cad.car2026 import CarParams, sprung_parts, build_car, _wing_stack  # noqa: E402
 
 COLORS = {"body": "#3b4a6b", "front_wing": "#b0413e", "rear_wing": "#b0413e",
-          "wheels_front": "#2b2b2b", "wheels_rear": "#2b2b2b"}
+          "wheels_front": "#2b2b2b", "wheels_rear": "#2b2b2b",
+          "halo": "#9aa0a8", "wake_boards": "#b0413e", "mirrors": "#3b4a6b",
+          "suspension_front": "#6b7280", "suspension_rear": "#6b7280"}
+# parts that must clear the tyres
+CLEAR_OF_TYRES = ("body", "front_wing", "rear_wing", "halo", "wake_boards", "mirrors")
+
+
+class _BB:
+    """Tight bounds with the attribute names of cq.BoundBox."""
+    def __init__(self, shape):
+        (self.xmin, self.ymin, self.zmin), (self.xmax, self.ymax, self.zmax) = qa.tight_bbox(shape)
 
 
 def regulation_checks(p, sprung, ground):
     """(description, value, limit, ok) for the limits this model is meant to respect."""
-    bb = {k: v.BoundingBox() for k, v in sprung.items()}
+    bb = {k: _BB(v) for k, v in sprung.items()}
     rows = []
 
     def add(desc, val, lim, ok):
@@ -62,11 +73,41 @@ def regulation_checks(p, sprung, ground):
             all(lo - 0.1 <= g <= hi + 0.1 for g in gaps))
 
     wheels = ground["wheels_front"].fuse(ground["wheels_rear"])
-    clear = min(ground[k].distance(wheels) for k in ("body", "front_wing", "rear_wing"))
-    add("body/wings to tyre clearance [mm]", round(clear, 1), "> 10", clear > 10)
-    zmin = min(ground[k].BoundingBox().zmin for k in ("body", "front_wing", "rear_wing"))
-    add("lowest bodywork above road [mm]", round(zmin, 1), "> 0", zmin > 0)
+    clear_parts = [k for k in CLEAR_OF_TYRES if k in ground]
+    clear = min(ground[k].distance(wheels) for k in clear_parts)
+    add("bodywork to tyre clearance [mm]", round(clear, 1), "> 10", clear > 10)
+    zmin = min(_BB(ground[k]).zmin for k in sprung)
+    add("lowest sprung part above road [mm]", round(zmin, 1), "> 0", zmin > 0)
     return rows
+
+
+def geometry_checks(parts, outdir, half):
+    """cad.qa checks on the exported parts and on every loft that built them."""
+    checks = []
+    # the full car keeps left/right tyres and wake boards as separate bodies;
+    # suspension parts are sets of members (track rod apart from the wishbones)
+    expect = {k: 1 if half or not k.startswith(("wheels", "wake_boards", "mirrors")) else 2
+              for k in parts}
+    expect.update({k: None for k in parts if k.startswith("suspension")})
+    for label, solid, wires in car2026.LOFT_LOG:
+        excess, slab, axis = qa.loft_local_escape(solid, wires)
+        where = f" at {slab} along {axis}" if slab is not None else ""
+        checks.append(qa.Check(f"loft '{label}' stays near its sections",
+                               excess <= qa.LOFT_ESCAPE_LIMIT,
+                               f"{excess:.1f} mm{where} (limit {qa.LOFT_ESCAPE_LIMIT:.0f})"))
+    for name, shape in parts.items():
+        checks += qa.solid_checks(name, shape, expect[name])
+    for name in ("halo", "wake_boards", "mirrors"):
+        if name in parts:
+            checks += qa.attached(name, parts[name], {"body": parts["body"]})
+    for name, wheel in (("suspension_front", "wheels_front"), ("suspension_rear", "wheels_rear")):
+        if name in parts:
+            checks += qa.attached(name, parts[name], {"body": parts["body"], wheel: parts[wheel]})
+    for name in parts:
+        n_open, n_tri = qa.stl_open_edges(outdir / f"{name}.stl")
+        checks.append(qa.Check(f"{name}.stl closed", n_open == 0,
+                               f"{n_open} open edges / {n_tri} triangles"))
+    return checks
 
 
 def export(parts, outdir):
@@ -89,10 +130,12 @@ def render(parts, path, title):
     lo, hi = allv.min(0), allv.max(0)
     light = np.array([-0.4, -0.6, 0.7]) / np.linalg.norm([-0.4, -0.6, 0.7])
 
-    views = [("isometric", 22, -125), ("side", 0, -90), ("top", 90, -90), ("front", 0, 180)]
-    fig = plt.figure(figsize=(16, 10))
+    # underside: the floor and diffuser make most of the downforce, so review them too
+    views = [("isometric", 22, -125), ("side", 0, -90), ("top", 90, -90),
+             ("front", 0, 180), ("underside", -90, -90), ("rear 3/4", 18, -35)]
+    fig = plt.figure(figsize=(18, 10))
     for i, (lbl, elev, azim) in enumerate(views):
-        ax = fig.add_subplot(2, 2, i + 1, projection="3d")
+        ax = fig.add_subplot(2, 3, i + 1, projection="3d")
         for name, t in tris.items():
             n = np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0])
             n /= np.linalg.norm(n, axis=1, keepdims=True) + 1e-12
@@ -121,31 +164,58 @@ def main():
     ap.add_argument("--rh-rear", type=float)
     ap.add_argument("--fw-flap-delta", type=float, help="extra FW flap rotation [deg]")
     ap.add_argument("--rw-flap-delta", type=float, help="extra RW flap rotation [deg]")
+    ap.add_argument("--halo", action="store_true")
+    ap.add_argument("--suspension", action="store_true")
+    ap.add_argument("--wake-boards", action="store_true", help="front wheel wake boards")
+    ap.add_argument("--mirrors", action="store_true")
+    ap.add_argument("--details", action="store_true",
+                    help="all of halo, suspension, wake boards, mirrors")
+    ap.add_argument("--g1", action="store_true",
+                    help="G1 shapes after the FIA 2026 renders (spoon front wing, undercut sidepods)")
+    ap.add_argument("--fia", action="store_true", help="--g1 --details, output name 'fia2026'")
+    ap.add_argument("--wb-yaw", type=float, help="wake board inward alignment [deg]")
     ap.add_argument("--no-render", action="store_true")
     args = ap.parse_args()
+    args.g1 |= args.fia
+    args.details |= args.fia
 
     over = {k: v for k, v in (("ride_height_front", args.rh_front),
                               ("ride_height_rear", args.rh_rear),
                               ("fw_flap_delta", args.fw_flap_delta),
-                              ("rw_flap_delta", args.rw_flap_delta)) if v is not None}
+                              ("rw_flap_delta", args.rw_flap_delta),
+                              ("wb_yaw", args.wb_yaw)) if v is not None}
+    tags = [t for t, on in (("halo", args.halo), ("susp", args.suspension),
+                            ("wb", args.wake_boards), ("mirr", args.mirrors))
+            if on or args.details]
+    over.update(halo="halo" in tags, suspension="susp" in tags, wake_boards="wb" in tags,
+                mirrors="mirr" in tags, geom_level="G1" if args.g1 else "G0")
     p = CarParams().with_(**over)
+    if args.name == "baseline":
+        if args.fia:
+            args.name = "fia2026"
+        elif tags or args.g1:
+            base = "g1" if args.g1 else "baseline"
+            args.name = base + ("_detail" if len(tags) == 4 else
+                                "".join("_" + t for t in tags))
 
     t0 = time.time()
+    car2026.LOFT_LOG.clear()
     sprung = sprung_parts(p)
     ground = build_car(p, sprung, half=True)
     parts = ground if args.half else build_car(p, sprung)
     print(f"built in {time.time() - t0:.1f} s  (rake {p.pitch_deg:.2f} deg)")
 
     rows = regulation_checks(p, sprung, ground)
+    reg_ok = all(r[3] for r in rows)
     w = max(len(r[0]) for r in rows)
+    print("  -- regulations (tight bounds)")
     for desc, val, lim, ok in rows:
         val = f"{val:.1f}" if isinstance(val, float) else val
         print(f"  {'OK ' if ok else 'NG '} {desc:<{w}}  {val:>16}  ({lim})")
 
     for name, s in parts.items():
-        bb = s.BoundingBox()
-        print(f"  {name:<13} valid={s.isValid()} solids={len(s.Solids())}  "
-              f"X {bb.xmin:7.0f}..{bb.xmax:5.0f}  Y {bb.ymin:5.0f}..{bb.ymax:4.0f}  "
+        bb = _BB(s)
+        print(f"  {name:<13} X {bb.xmin:7.0f}..{bb.xmax:5.0f}  Y {bb.ymin:5.0f}..{bb.ymax:4.0f}  "
               f"Z {bb.zmin:4.0f}..{bb.zmax:4.0f} mm")
 
     outdir = ROOT / "cad" / "out" / (args.name + ("_half" if args.half else ""))
@@ -153,12 +223,19 @@ def main():
     (outdir / "params.json").write_text(json.dumps(p.to_dict(), indent=2), encoding="utf-8")
     print(f"exported {outdir.relative_to(ROOT)}  (STL in m, STEP in mm)")
 
+    geo_ok = qa.report(geometry_checks(parts, outdir, args.half), "geometry QA (cad/qa.py)")
+
     if not args.no_render:
         fig = ROOT / "docs" / "figures" / f"car2026_{outdir.name}.png"
         render(parts, fig, f"Simplified 2026 F1 car ({outdir.name}) - FIA 2026 Technical "
                            f"Regulations Issue 8 dimensions")
         print(f"saved {fig.relative_to(ROOT)}")
 
+    if not (reg_ok and geo_ok):
+        print("FAILED: see NG rows above (a failed check is not a pass)")
+        return 1
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
