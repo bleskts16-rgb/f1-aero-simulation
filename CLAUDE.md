@@ -27,6 +27,8 @@ F1 셋업 → 파라메트릭 CAD → OpenFOAM → 공력 서로게이트 → QS
   CAD는 mm, CFD용 STL은 m.
 - CFD는 Y ≥ 0 반쪽 모델이다. 힘은 ×2 해서 전체 차량 값으로 보고한다.
 - **CL·A는 다운포스가 +** (`lapsim.Vehicle.cla`와 같음), CD·A는 항력 +. 기준 동압 q = ½·1.2·U², 기본 U = 50 m/s.
+- CFD 정확도 목표(2026-10-19, `docs/results/aero_sensitivity_2026.md`): 코너 모드 CL·A ±2 %, CD·A ±2.5 %, 직선 모드 CD·A ±4 %.
+  직선 모드 CL·A는 랩타임에 거의 영향이 없다. 격자 연구의 HF 판정은 이 기준으로 한다.
 - CL·CD의 기준 면적은 baseline 전체 차량 정면 면적 1.474 m²(바퀴 포함, `cfd_report.py --aref`).
 - 격자 단계 L1~L5는 배경 셀 0.40 m에서 1.33배씩 줄인 계열이다(`make_cfd_case.py`의 `LEVELS`). 단계마다 다른 설정은 바꾸지 않는다.
 - 힘은 마지막 1000회 평균과 자기상관을 보정한 표준오차로 본다.
@@ -58,6 +60,8 @@ python scripts/build_car.py --half --details                         # 헤일로
 python scripts/build_car.py --half --fia                             # G1(FIA 렌더 스타일) + 상세 부품 → cad/out/fia2026_half
 python scripts/render_car.py baseline_half fia2026_half              # pyvista 3D 렌더·비교 → docs/figures/render_*.png
 $env:F1_CAR="fia2026_half"; paraview --script=scripts/pv_car.py      # ParaView로 형상 보기 (PowerShell, 저장소 루트에서)
+python scripts/run_lap_2026.py Monza                                 # 2026 규정 랩 (lapsim/rules2026.py)
+python scripts/aero_sensitivity_2026.py                              # 공력 민감도 → CFD 정확도 목표
 python scripts/make_cfd_case.py --level L1 --np 4                    # 로컬 케이스
 python scripts/run_cfd.py cfd/runs/baseline_half_L1                  # WSL에서 메싱 + 해석
 python scripts/cfd_report.py cfd/runs/baseline_half_L1 --aref 1.474  # 시간·메모리·CL/CD

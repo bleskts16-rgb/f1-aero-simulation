@@ -1,0 +1,62 @@
+{
+  "cla_z": 5.744,
+  "cda_z": 1.426,
+  "cla_x": 2.872,
+  "cda_x": 0.784,
+  "x_ratio_cla": 0.5,
+  "x_ratio_cda": 0.55,
+  "rms_lap_error_s": 1.321,
+  "tracks": {
+    "Suzuka": {
+      "real": 88.778,
+      "sim": 88.317,
+      "err": -0.461
+    },
+    "Shanghai": {
+      "real": 92.064,
+      "sim": 91.084,
+      "err": -0.98
+    },
+    "Montreal": {
+      "real": 72.578,
+      "sim": 70.829,
+      "err": -1.749
+    },
+    "Spielberg": {
+      "real": 66.113,
+      "sim": 66.221,
+      "err": 0.108
+    },
+    "Silverstone": {
+      "real": 88.111,
+      "sim": 88.048,
+      "err": -0.063
+    },
+    "Budapest": {
+      "real": 77.207,
+      "sim": 77.154,
+      "err": -0.053
+    },
+    "Spa": {
+      "real": 104.361,
+      "sim": 105.815,
+      "err": 1.454
+    },
+    "Zandvoort": {
+      "real": 71.163,
+      "sim": 73.886,
+      "err": 2.723
+    },
+    "Monza": {
+      "real": 81.786,
+      "sim": 80.399,
+      "err": -1.387
+    }
+  },
+  "note": "global one-trim fit to 2026 qualifying best laps (Jolpica); X-mode ratios assumed",
+  "excluded": [
+    "Melbourne",
+    "Catalunya"
+  ],
+  "excluded_reason": "track database (TUMFTM, ~2020) predates layout changes: Albert Park 2022, Catalunya final chicane removed 2023"
+}

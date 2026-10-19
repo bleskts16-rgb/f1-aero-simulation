@@ -1,0 +1,61 @@
+{
+  "_source": "Jolpica-F1 API (api.jolpi.ca/ergast), best of Q1/Q2/Q3 in qualifying, fetched 2026-10-19",
+  "_note": "lap times only; 2024 Spa qualifying was wet",
+  "laps": {
+    "Melbourne": {
+      "circuit_id": "albert_park",
+      "2024": 75.915,
+      "2026": 78.518
+    },
+    "Suzuka": {
+      "circuit_id": "suzuka",
+      "2024": 88.197,
+      "2026": 88.778
+    },
+    "Shanghai": {
+      "circuit_id": "shanghai",
+      "2024": 93.66,
+      "2026": 92.064
+    },
+    "Montreal": {
+      "circuit_id": "villeneuve",
+      "2024": 71.742,
+      "2026": 72.578
+    },
+    "Catalunya": {
+      "circuit_id": "catalunya",
+      "2024": 71.383,
+      "2026": 74.679
+    },
+    "Spielberg": {
+      "circuit_id": "red_bull_ring",
+      "2024": 64.314,
+      "2026": 66.113
+    },
+    "Silverstone": {
+      "circuit_id": "silverstone",
+      "2024": 85.819,
+      "2026": 88.111
+    },
+    "Budapest": {
+      "circuit_id": "hungaroring",
+      "2024": 75.227,
+      "2026": 77.207
+    },
+    "Spa": {
+      "circuit_id": "spa",
+      "2024": 113.159,
+      "2026": 104.361
+    },
+    "Zandvoort": {
+      "circuit_id": "zandvoort",
+      "2024": 69.673,
+      "2026": 71.163
+    },
+    "Monza": {
+      "circuit_id": "monza",
+      "2024": 79.327,
+      "2026": 81.786
+    }
+  }
+}

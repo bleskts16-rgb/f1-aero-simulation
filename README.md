@@ -18,7 +18,7 @@ F1 셋업 파라미터(윙 각도, 라이드 하이트, 사이드포드 형상 �
 
 | 단계 | 내용 | 상태 |
 |---|---|---|
-| 1 | QSS 랩타임 시뮬레이터 + 실제 F1 텔레메트리 검증 | ✅ 1차 완료 |
+| 1 | QSS 랩타임 시뮬레이터 + 실제 F1 텔레메트리 검증 | ✅ 2024 검증, 2026 규정 버전 추가 |
 | 2 | 파라메트릭 단순화 F1 형상 (CadQuery, 2026 기술규정 기준) | 🔧 1차 형상 완료 |
 | 3 | OpenFOAM 자동 해석 파이프라인 (multi-fidelity) | 🔧 파이프라인 동작, 격자 독립성 확인 중 |
 | 4 | 공력 서로게이트 학습 → 랩 시뮬 연결 | ⏳ |
@@ -52,6 +52,35 @@ F1 셋업 파라미터(윙 각도, 라이드 하이트, 사이드포드 형상 �
 - ERS 에너지 한계(직선 끝 clipping), 기어 변속, DRS를 아직 반영하지 않았습니다.
 - 질점 모델이라 공력 밸런스(앞뒤 다운포스 배분)의 영향은 보지 못합니다. 이후 2축(bicycle) 모델로 확장할 예정입니다.
 - 트랙 데이터에 연석이 포함되지 않고 측량 노이즈가 있어, 곡률 평활화(σ = 8 m)를 적용했습니다.
+
+## 1단계 확장: 2026 규정 랩 모델과 CFD 정확도 목표
+
+`lapsim/rules2026.py`는 같은 질점 QSS 모델에 2026 규정을 얹은 것이다(FIA 2026 Technical Regulations Issue 8).
+
+| 항목 | 반영 내용 | 근거 |
+|---|---|---|
+| 중량 | 724 kg + 타이어(약 44 kg) + 예선 연료 6 kg = 774 kg | Art. 4.2 (타이어·연료는 가정) |
+| ICE | 크랭크 400 kW (연료 에너지 유량 3000 MJ/h 한계) | 5.4.3 (출력값은 가정) |
+| ERS-K | 최대 350 kW. 290 km/h부터 줄어 345 km/h에서 0 | 5.4.7, 5.4.8 |
+| 에너지 | 회수 ≤ 8.5 MJ/랩, 충전 상태 변동 폭 4 MJ → 예선 랩 배치(전개) ≤ 4 MJ + 회수량. 속도 기준값 아래에서만 전개(클리핑) | 5.4.9, 5.4.10 |
+| 가변 공력 | 직선(반경 800 m 초과, 150 m 이상)에서 가속 중이면 X 모드(저항 저감), 그 밖과 모든 제동은 Z 모드(코너) | 3.10.9, 3.11.6 (구간 기준은 가정) |
+
+**2026 실측과 맞추기**: 2026 텔레메트리는 공개 서버가 인증을 요구해서 받지 못했다. 대신 공개 API(Jolpica)의 **2026 예선 최고 랩타임**에 맞췄다.
+- 맞춘 값: 모든 서킷 공통의 공력 세팅 하나(코너 모드 CL·A, CD·A)
+- 직선 모드 값: 코너 모드에 대한 비율 0.50, 0.55로 가정
+- 결과: CL·A **5.74 / 2.87**, CD·A **1.43 / 0.78** m² (코너 / 직선). 9개 서킷 랩타임 RMS 오차 **1.32 s**
+- 직선 모드 항력은 2024 평균보다 54% 낮다. FIA가 발표한 2026 목표(항력 −55%)와 같은 수준이다.
+- Melbourne과 Catalunya는 트랙 데이터가 2022, 2023년 레이아웃 변경 이전이라 제외했다.
+
+![lap2026 Monza](docs/figures/lap2026_Monza.png)
+
+**공력 민감도와 CFD 정확도 목표** ([docs/results/aero_sensitivity_2026.md](docs/results/aero_sensitivity_2026.md))
+
+![sensitivity](docs/figures/aero_sensitivity_2026.png)
+
+- 랩타임에 가장 큰 영향은 **코너 모드 CL·A**다(1 %에 0.07~0.13 s). 다음은 코너 모드 CD·A와 직선 모드 CD·A다. 직선 모드 CL·A는 거의 영향이 없다.
+- 모델 자체 오차(약 1.3 s)를 생각하면 현실적인 HF 목표는 랩 ±0.5 s 수준이다. 그러면 CL·A ±2 %, CD·A ±2.5 %, 직선 모드 CD·A ±4 %가 된다.
+  grid1의 CFD 흔들림(CL·A 26~33 %)은 이 목표의 10배 이상이다.
 
 ## 2단계: 2026 규정 기반 단순화 형상
 
@@ -121,6 +150,10 @@ python scripts/run_lap.py Suzuka --cla 7.0 --cda 1.6    # 공력값 직접 지�
 python scripts/validate.py Monza Suzuka --calibrated    # 실제 랩과 비교
 python scripts/calibrate_aero.py Monza Budapest         # 서킷별 공력 역산
 
+python scripts/fit_2026.py                              # 2026 예선 랩타임에 공통 공력 세팅 맞춤 → data/aero_2026.json
+python scripts/run_lap_2026.py Monza                    # 2026 랩 한 바퀴 (가변 공력·ERS 구간 표시)
+python scripts/aero_sensitivity_2026.py                 # 공력 민감도 → CFD 정확도 목표
+
 python scripts/build_car.py                             # 2026 단순화 형상 (전체)
 python scripts/build_car.py --half                      # 대칭면 해석용 반쪽 모델
 python scripts/build_car.py --fw-flap-delta -10 --rw-flap-delta -25 --name low_drag
@@ -158,3 +191,4 @@ docs/worklog.md  날짜별 작업 기록과 다음 할 일
 ## 데이터 출처
 - 서킷 형상: [TUMFTM/racetrack-database](https://github.com/TUMFTM/racetrack-database) (LGPL-3.0)
 - 실제 랩 텔레메트리: [FastF1](https://github.com/theOehrlein/Fast-F1)
+- 2024/2026 예선 랩타임: [Jolpica-F1 API](https://github.com/jolpica/jolpica-f1) (`data/quali_best_2024_2026.json`)
