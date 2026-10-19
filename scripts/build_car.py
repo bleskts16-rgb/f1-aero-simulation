@@ -57,7 +57,7 @@ def regulation_checks(p, sprung, ground):
     add("2.7a body Z min (car frame) [mm]", bb["body"].zmin, ">= 0", bb["body"].zmin >= -0.5)
     fw, rw = bb["front_wing"], bb["rear_wing"]
     add("App.1 s18 FW front X (XF) [mm]", fw.xmin, ">= -1250", fw.xmin >= -1250.5)
-    add("App.1 s19 FW |Y| max [mm]", fw.ymax, "<= 680", fw.ymax <= 680)
+    add("App.1 s19-22 FW endplate |Y| max [mm]", fw.ymax, "<= 900", fw.ymax <= 900)
     add("App.1 s25 RW profiles |Y| max [mm]", p.rw_span_half, "<= 575", p.rw_span_half <= 575)
     add("App.1 s25/26 RW Z max [mm]", rw.zmax, "<= 880", rw.zmax <= 880)
     add("App.1 s26 RW rear X (XR) [mm]", rw.xmax - p.xr, "<= 750", rw.xmax - p.xr <= 750)
@@ -72,12 +72,40 @@ def regulation_checks(p, sprung, ground):
         add(f"{tag} slot gaps [mm]", ", ".join(f"{g:.1f}" for g in gaps), f"{lo}..{hi}",
             all(lo - 0.1 <= g <= hi + 0.1 for g in gaps))
 
+    if p.geom_level == "G1":
+        rows += g1_wing_checks(p, sprung)
+
     wheels = ground["wheels_front"].fuse(ground["wheels_rear"])
     clear_parts = [k for k in CLEAR_OF_TYRES if k in ground]
     clear = min(ground[k].distance(wheels) for k in clear_parts)
     add("bodywork to tyre clearance [mm]", round(clear, 1), "> 10", clear > 10)
     zmin = min(_BB(ground[k]).zmin for k in sprung)
     add("lowest sprung part above road [mm]", round(zmin, 1), "> 0", zmin > 0)
+    return rows
+
+
+def g1_wing_checks(p, sprung):
+    """Front/rear wing rules checked on G1 only (G0 predates them and fails the
+    swept front limit and the endplate coverage; it is kept for the grid studies).
+    FIA 2026 Technical Regulations Issue 8, Art. 3.10 and Appendix 1."""
+    rows = []
+    fw, rw = sprung["front_wing"], sprung["rear_wing"]
+    rows.append(("App.1 s18 FW profiles half span [mm]", car2026.FW_SPAN_G1, "<= 675",
+                 car2026.FW_SPAN_G1 <= 675))
+    verts, _ = fw.tessellate(0.5, 0.2)
+    v = np.array([[q.x, q.y, q.z] for q in verts])
+    ahead = float(np.min(v[:, 0] - car2026.fw_section_x(np.abs(v[:, 1]))))
+    rows.append(("App.1 s17 FW aft of RS-FW-SECTION [mm]", round(ahead, 1), ">= 0", ahead >= -0.5))
+    for desc, poly, axes, ray, rng, shape in (
+            ("3.10.6g FWEP obscures RS-FWEP-TOP from above", car2026.RS_FWEP_TOP, "xy", "z",
+             (-200.0, 1200.0), fw),
+            ("3.10.6h FWEP obscures RS-FWEP-SIDE from inboard", car2026.RS_FWEP_SIDE, "xz", "y",
+             (600.0, 950.0), fw),
+            ("3.11 RW endplate obscures RS-RWEP from the side",
+             [(p.xr + x, z) for x, z in car2026.RS_RWEP], "xz", "y", (380.0, 700.0), rw)):
+        frac, missed = qa.obscured(shape, poly, axes, ray, rng)
+        val = f"{100 * frac:.1f} %" + (f", e.g. {missed[0][0]:.0f},{missed[0][1]:.0f}" if missed else "")
+        rows.append((desc, val, "100 %", not missed))
     return rows
 
 

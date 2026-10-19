@@ -49,6 +49,8 @@ def main():
     xd = xr + p.diffuser_start
     a.plot([xd, xr + 165, xr + 165], [p.floor_thickness, p.diffuser_exit_height + p.floor_thickness, 0],
            color="k", lw=0.8, label="diffuser ramp / exit")
+    rs = np.array(c.RS_RWEP + (c.RS_RWEP[0],))
+    a.plot(xr + rs[:, 0], rs[:, 1], color="k", ls=":", lw=1.2, label="RS-RWEP (must be covered)")
     a.set_title("rear, side view (car frame)")
     a.set_xlabel("X [mm]"); a.set_ylabel("Z [mm]"); a.set_aspect("equal")
     a.set_xlim(xr - 450, xr + 750); a.set_ylim(-50, 950); a.legend(frameon=False, fontsize=7, loc="upper left")
@@ -69,28 +71,39 @@ def main():
     a.legend(frameon=False, fontsize=7, loc="upper left")
 
     a = ax[1, 0]
-    ep = np.array(c._rounded_outline(c.G1_FW_EP_SIDE))
-    a.plot(ep[:, 0], ep[:, 1], color=navy, lw=1, label="endplate outline (before wheel cut)")
-    a.plot(412.5 * np.cos(th), 360 + 412.5 * np.sin(th), color=grey, ls="--", lw=1, label="wheel clearance cut R412.5")
-    fs = c.fw_foot_sections()
-    fx = np.array([x for x, _ in fs])
-    ftop = np.array([np.array(r)[:, 1].max() for _, r in fs])
-    a.fill_between(fx, 40, ftop, color=red, alpha=0.3, lw=0, label="footplate (curl top along X)")
-    a.plot(fx, ftop, ".", color=red, ms=3)
-    a.set_title("front, side view"); a.set_xlabel("X [mm]"); a.set_ylabel("Z [mm]"); a.set_aspect("equal")
-    a.set_xlim(-1300, -200); a.set_ylim(0, 500); a.legend(frameon=False, fontsize=7, loc="upper right")
+    body = np.array(c._rounded_outline(c.G1_FW_EP_BODY))
+    fence = np.array(c._rounded_outline(c.G1_FW_FENCE))
+    a.plot(np.r_[body[:, 0], body[0, 0]], np.r_[body[:, 1], body[0, 1]], color=navy, lw=1,
+           label="endplate body (before wheel cut)")
+    a.plot(np.r_[fence[:, 0], fence[0, 0]], np.r_[fence[:, 1], fence[0, 1]], color=red, lw=1, label="fence")
+    for (y0, y1, z0, z1), col, lab in ((c.G1_FW_IFP, green, "inboard footplate"),
+                                       (c.G1_FW_OFP, red, "outboard footplate")):
+        a.fill_between([c.fw_section_x(y1) + 3, c.G1_FW_FP_REAR], z0, z1, color=col, alpha=0.3, lw=0, label=lab)
+    rs = np.array(c.RS_FWEP_SIDE + (c.RS_FWEP_SIDE[0],))
+    a.plot(rs[:, 0], rs[:, 1], color="k", ls=":", lw=1.2, label="RS-FWEP-SIDE (must be covered)")
+    a.plot(412.5 * np.cos(th), 360 + 412.5 * np.sin(th), color=grey, ls="--", lw=1, label="wheel cut D825")
+    a.set_title("front endplate, side view"); a.set_xlabel("XF [mm]"); a.set_ylabel("Z [mm]"); a.set_aspect("equal")
+    a.set_xlim(-1300, -200); a.set_ylim(0, 450); a.legend(frameon=False, fontsize=6.5, loc="upper left")
 
     a = ax[1, 1]
-    for i, (x, ring) in enumerate(fs):
-        ft = np.array(ring)
-        a.plot(np.r_[ft[:, 0], ft[0, 0]], np.r_[ft[:, 1], ft[0, 1]], color=red, lw=0.7, alpha=0.4 + 0.5 * (i == 5),
-               label="footplate J sections" if i == 0 else None)
-    print("footplate points per section:", sorted({len(r) for _, r in fs}))
-    a.fill_between([p.fw_span_half - 10, p.fw_span_half + 2], [40, 40], [410, 410], color=navy, alpha=0.3,
-                   lw=0, label="endplate")
-    a.axvline(680, color="k", ls=":", lw=1, label="RV-FWEP-BODY |Y| = 680")
-    a.set_title("front, view from ahead (Y >= 0)"); a.set_xlabel("Y [mm]"); a.set_ylabel("Z [mm]")
-    a.set_aspect("equal"); a.set_xlim(590, 700); a.set_ylim(20, 220); a.legend(frameon=False, fontsize=7)
+    for (y0, y1, z0, z1), col, lab in ((c.G1_FW_IFP, green, "inboard footplate"),
+                                       (c.G1_FW_OFP, red, "outboard footplate")):
+        o = np.array(c.fw_footplate_outline(y0, y1))
+        a.fill(o[:, 0], o[:, 1], color=col, alpha=0.3, lw=0, label=lab)
+    by0, by1 = c.G1_FW_EP_BODY_Y
+    a.fill_between([-980, -412], by0, by1, color=navy, alpha=0.5, lw=0, label="endplate body")
+    fy0, fy1 = c.G1_FW_FENCE_Y
+    a.fill_between([-820, -300], fy0, fy1, color=red, alpha=0.6, lw=0, label="fence")
+    ys = np.linspace(0, c.FW_SPAN_G1, 60)
+    a.plot([p.fw_le[0] + c.fw_sweep(p, y) for y in ys], ys, color=navy, lw=1, label="wing leading edge (swept)")
+    a.plot([c.fw_section_x(0), c.fw_section_x(900)], [0, 900], color="k", lw=0.8, label="RS-FW-SECTION (front limit)")
+    rt = np.array(c.RS_FWEP_TOP + (c.RS_FWEP_TOP[0],))
+    a.plot(rt[:, 0], rt[:, 1], color="k", ls=":", lw=1.2, label="RS-FWEP-TOP (must be covered)")
+    a.fill_between([-352, 352], p.half_width - p.tyre_f_width, p.half_width, color=grey, alpha=0.25, lw=0,
+                   label="front tyre")
+    a.set_title("front wing, top view (Y >= 0)"); a.set_xlabel("XF [mm]"); a.set_ylabel("Y [mm]")
+    a.set_aspect("equal"); a.set_xlim(-1300, 400); a.set_ylim(0, 1000)
+    a.legend(frameon=False, fontsize=6.5, loc="lower right")
 
     fig.suptitle("G1 endplates: design sections before lofting", fontsize=9)
     fig.tight_layout()

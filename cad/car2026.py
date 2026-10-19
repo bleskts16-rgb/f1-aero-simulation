@@ -123,39 +123,69 @@ class CarParams:
 
 
 # ------------------------------------------------- G1 design tables (clean-cad)
-# Rear-wing endplate, part beside the wing (FIA 2026 renders): side outline
-# (dX from XR, Z, corner radius). Straight runs + tangent arcs never leave the hull
-# of these vertices (a periodic spline overshot the 880 mm limit by 38 mm).
-# Its lower edge is flat at Z 460 over X 400..650 so the lower endplate's first
-# station (Z 470, same X ends) sits inside it: one shared station, no step (J1).
-G1_RW_EP_UPPER = ((230.0, 878.0, 45.0), (650.0, 878.0, 35.0), (650.0, 460.0, 0.0),
-                  (400.0, 460.0, 0.0), (320.0, 520.0, 60.0), (225.0, 650.0, 45.0))
-# Rear-wing endplate lower part, after 2026 cars (Ferrari SF-26, flow-vis photos):
-# the endplate runs down behind the rear tyre and turns inboard into the diffuser
-# outer wall. Horizontal stadium sections (15 mm thick, bull-nosed ends) lofted
-# through these keyframes; values between them by monotone cubic (PCHIP).
+# Sources: FIA 2026 F1 Technical Regulations Issue 8 (2024-06-24), Art. 3.10 / 3.11
+# and Appendix 1 (§17-22 reference volumes, table of reference surfaces RS-*).
+# Coordinates: X from the axle named in the comment, Z from the reference plane.
+
+# Rear-wing endplate must obscure RS-RWEP when seen from the side (App.1 RS #12):
+RS_RWEP = ((310, 870), (740, 870), (740, 700), (630, 350), (400, 275), (230, 700),
+           (245, 800))                                          # [XR, Z]
+# Part beside the wing: side outline (dX from XR, Z, corner radius). Straight runs +
+# tangent arcs never leave the hull of these vertices (a periodic spline overshot
+# the 880 mm limit by 38 mm). Flat lower edge at Z 460 over X 322..672, so the lower
+# endplate's first station (Z 470, same X ends) sits inside it (J1, no step).
+G1_RW_EP_UPPER = ((225.0, 878.0, 40.0), (745.0, 878.0, 20.0), (745.0, 690.0, 30.0),
+                  (672.0, 460.0, 0.0), (322.0, 460.0, 0.0), (222.0, 700.0, 30.0))
+# Lower part, after 2026 cars (Ferrari SF-26 flow-vis): runs down behind the rear
+# tyre and turns inboard into the diffuser outer wall. Horizontal stadium sections
+# (15 mm thick, bull-nosed ends) through these keyframes, PCHIP between; the X ends
+# follow the RS-RWEP edges [400,275]-[230,700] and [630,350]-[740,700].
 #   (Z car frame, X front from XR, X rear from XR, Y centre)
-G1_RW_EP_LOWER = ((470.0, 400.0, 650.0, 552.5), (380.0, 405.0, 632.0, 540.0),
-                  (300.0, 410.0, 610.0, 500.0), (230.0, 400.0, 580.0, 440.0),
-                  (180.0, 380.0, 560.0, 395.0))
+G1_RW_EP_LOWER = ((470.0, 320.0, 672.0, 552.5), (420.0, 340.0, 655.0, 549.0),
+                  (380.0, 356.0, 645.0, 538.0), (350.0, 368.0, 636.0, 522.0),
+                  (330.0, 376.0, 600.0, 505.0),
+                  (280.0, 390.0, 560.0, 458.0), (230.0, 395.0, 545.0, 422.0),
+                  (180.0, 380.0, 540.0, 395.0))
 G1_RW_EP_THICK = 15.0
 # Diffuser outer-wall extension tying the endplate foot to the diffuser exit,
 # side outline (dX from XR, Z, corner radius), Y 382..398 (overlaps the fence 375..390)
 G1_RW_DIFF_LINK = ((100.0, 40.0, 0.0), (100.0, 195.0, 10.0), (420.0, 232.0, 40.0),
                    (570.0, 200.0, 20.0), (570.0, 160.0, 20.0), (380.0, 120.0, 40.0))
 G1_RW_DIFF_LINK_Y = (382.0, 398.0)
-# Front-wing endplate side outline (X, Z, corner radius) before the wheel cut, and
-# the J-section footplate at its base (Y, Z, corner radius) after 2026 cars (Ferrari,
-# Haas, Mercedes): a foot that runs outboard along the bottom and curls up. Stays
-# inside RV-FWEP-BODY |Y| <= 680.
-G1_FW_EP_SIDE = ((-1250.0, 40.0, 0.0), (-1245.0, 300.0, 40.0), (-1120.0, 410.0, 70.0),
-                 (-640.0, 410.0, 60.0), (-430.0, 330.0, 40.0), (-430.0, 40.0, 0.0))
-G1_FW_FOOT = ((628.0, 40.0, 0.0), (678.0, 40.0, 14.0), (678.0, 125.0, 4.0),
-              (667.0, 125.0, 4.0), (667.0, 52.0, 6.0), (628.0, 52.0, 0.0))
-# The curl height varies along X so the foot rises from both ends instead of
-# stopping as a cut-off extrusion (clean-cad W3): (X, curl top Z), PCHIP between.
-G1_FW_FOOT_CURL = ((-1235.0, 62.0), (-1120.0, 125.0), (-760.0, 140.0), (-470.0, 70.0))
-G1_FW_FOOT_X = (-1235.0, -470.0)
+
+# Front wing (all [XF, ...]). Everything lies aft of RS-FW-SECTION (§17), the
+# vertical plane through [-1250, 100] and [-975, 700]: X >= fw_section_x(Y).
+RS_FW_SECTION = ((-1250.0, 100.0), (-975.0, 700.0))           # [XF, Y]
+FW_SECTION_MARGIN = 3.0
+FW_SPAN_G1 = 670.0                    # profiles half span, RV-FW-PROFILES reaches Y 675
+# Endplate = body + inboard footplate + outboard footplate + fence (Art. 3.10.6).
+# Body: Y 662..678 in RV-FWEP-BODY (Y 600..680, Z 50..375, top trimmed by the plane
+# through [-1050, 225] and [-675, 375]); side outline (XF, Z, corner radius), then
+# trimmed by the D825 wheel cylinder at [XF, Z] = [0, 360] (§19.3).
+G1_FW_EP_BODY_Y = (662.0, 678.0)
+G1_FW_EP_BODY = ((-980.0, 52.0, 0.0), (-980.0, 250.0, 25.0), (-675.0, 372.0, 60.0),
+                 (-290.0, 372.0, 0.0), (-290.0, 52.0, 0.0))
+# Footplates, plan view; the front edge follows RS-FW-SECTION, the rear is trimmed by
+# the wheel cylinder. Inboard: RV-FWEP-IFP Y 600..750, Z 50..85. Outboard: RV-FWEP-OFP
+# Y 750..900, Z 50..140 (the tip that sticks out ahead of the front tyre).
+G1_FW_IFP = (600.0, 752.0, 52.0, 80.0)              # Y0, Y1, Z0, Z1
+G1_FW_OFP = (748.0, 899.0, 52.0, 74.0)
+G1_FW_FP_REAR = -300.0
+# Fence: RV-FWEP-FENCE X -825..-300, Y 825..900, Z 50..200; a vertical plate at the
+# outer tip, side outline (XF, Z, corner radius), convex (no concave radius < 250).
+G1_FW_FENCE_Y = (882.0, 897.0)
+G1_FW_FENCE = ((-820.0, 52.0, 0.0), (-820.0, 140.0, 40.0), (-690.0, 198.0, 60.0),
+               (-380.0, 198.0, 40.0), (-300.0, 130.0, 0.0), (-300.0, 52.0, 0.0))
+# Coverage the endplate must provide (Art. 3.10.6 g, h)
+RS_FWEP_TOP = ((-880, 895), (-325, 895), (-325, 670), (-980, 670))        # [XF, Y], from above
+RS_FWEP_SIDE = ((-975, 55), (-975, 225), (-650, 370), (-420, 370), (-410, 225),
+                (-305, 55))                                               # [XF, Z], from inboard
+
+
+def fw_section_x(y):
+    """X of RS-FW-SECTION at |Y| = y (the swept front limit of the front wing)."""
+    (x0, y0), (x1, y1) = RS_FW_SECTION
+    return x0 + (y - y0) * (x1 - x0) / (y1 - y0)
 
 
 # ---------------------------------------------------------------- primitives
@@ -410,11 +440,21 @@ def airbox_mouth(p: CarParams):
     return cq.Workplane(plane).ellipse(80, 62).extrude(110).val()
 
 
-def _spoon_element(x, z, c, ang, span, rise, n=9):
+def fw_sweep(p: CarParams, y, soft=10.0):
+    """Rearward shift of the whole front-wing section stack at |Y| = y, so its
+    leading edge stays FW_SECTION_MARGIN aft of RS-FW-SECTION. Zero inboard; a
+    softplus avoids a kink where the sweep starts."""
+    need = fw_section_x(y) + FW_SECTION_MARGIN - p.fw_le[0]
+    return soft * math.log1p(math.exp(need / soft))
+
+
+def _spoon_element(x, z, c, ang, span, rise, n=9, sweep=None):
     """Wing element lofted through Y stations whose sections are lifted by
-    rise * (y / span)^2.5: flat in the middle, curling up into the endplate.
-    Every element at a station moves by the same amount, so slot gaps stay as set."""
-    wires = [_wing_section(x, z + rise * (y / span) ** 2.5, c, ang, y)[0]
+    rise * (y / span)^2.5: flat in the middle, curling up into the endplate, and
+    moved back by sweep(y). Every element at a station moves by the same amount,
+    so slot gaps stay as set."""
+    sweep = sweep or (lambda y: 0.0)
+    wires = [_wing_section(x + sweep(y), z + rise * (y / span) ** 2.5, c, ang, y)[0]
              for y in np.linspace(0.0, span, n)]
     ts = BRepOffsetAPI_ThruSections(True, False, 1e-6)
     ts.SetParType(Approx_Centripetal)
@@ -426,57 +466,53 @@ def _spoon_element(x, z, c, ang, span, rise, n=9):
     return solid
 
 
+def _wheel_cut():
+    """D825 cylinder on the front axle (App.1 §19.3) that trims the endplate."""
+    return cq.Solid.makeCylinder(412.5, 1000, V(0, 0, 360), V(0, 1, 0))
+
+
 def front_wing(p: CarParams):
-    s = p.fw_span_half
-    elems, layout = _wing_layout(p.fw_le, p.fw_chords, p.fw_angles, 0, s,
-                                 p.fw_gap, p.fw_overlap, p.fw_flap_delta)
-    rise = 0.0
     if p.geom_level == "G1":
-        rise = p.fw_tip_rise
-        elems = [_spoon_element(x, z, c, a, s, rise) for x, z, c, a in layout]
+        return front_wing_g1(p)
+    s = p.fw_span_half
+    elems = _wing_stack(p.fw_le, p.fw_chords, p.fw_angles, 0, s,
+                        p.fw_gap, p.fw_overlap, p.fw_flap_delta)
     # Endplate in RV-FWEP-BODY (App.1 §19): Y 600..680, cut by an R412.5 cylinder
     # around [XF, Z] = [0, 360] for front-wheel clearance
-    extra = []
-    if p.geom_level == "G1":
-        plate = _extrude_xz(_rounded_outline(G1_FW_EP_SIDE), s - 10, s + 2)
-        extra.append(fw_footplate())
-    else:
-        plate = _box(-1250, -430, s - 10, s + 2, 40, 330 + rise)
-    plate = plate.cut(cq.Solid.makeCylinder(412.5, 1000, V(0, 0, 360), V(0, 1, 0)))
-    return _fuse(*elems, plate, *extra)
+    plate = _box(-1250, -430, s - 10, s + 2, 40, 330).cut(_wheel_cut())
+    return _fuse(*elems, plate)
 
 
-def fw_foot_sections(n=11):
-    """(x, outline) of the G1 footplate: the J section of G1_FW_FOOT with its curl
-    top set by G1_FW_FOOT_CURL at each station. Same vertices and radii at every
-    station, so every outline has the same point count (clean-cad D2)."""
-    from scipy.interpolate import PchipInterpolator
-    k = np.array(G1_FW_FOOT_CURL)
-    curl = PchipInterpolator(k[:, 0], k[:, 1])
-    out = []
-    for x in np.linspace(*G1_FW_FOOT_X, n):
-        top = float(curl(x))
-        verts = [(y, top if z == 125.0 else z, r) for y, z, r in G1_FW_FOOT]
-        out.append((float(x), _rounded_outline(verts)))
-    return out
+def fw_footplate_outline(y0, y1):
+    """Plan outline (XF, Y) of a footplate between y0 and y1: front edge on
+    RS-FW-SECTION (+ margin), rear at G1_FW_FP_REAR, small rounded outer corners."""
+    xf0 = fw_section_x(y0) + FW_SECTION_MARGIN
+    xf1 = fw_section_x(y1) + FW_SECTION_MARGIN
+    return _rounded_outline([(xf0, y0, 0.0), (xf1, y1, 5.0), (G1_FW_FP_REAR, y1, 15.0),
+                             (G1_FW_FP_REAR, y0, 0.0)])
 
 
-def fw_footplate():
-    """G1 endplate foot: J-shaped section (out along the bottom, curled up at the
-    outer edge) lofted along X under the endplate, curl rising from both ends."""
-    wires = [cq.Wire.makePolygon([V(x, y, z) for y, z in ring], close=True)
-             for x, ring in fw_foot_sections()]
-    ts = BRepOffsetAPI_ThruSections(True, False, 1e-6)
-    ts.SetParType(Approx_Centripetal)
-    for w in wires:
-        ts.AddWire(w.wrapped)
-    ts.Build()
-    solid = cq.Solid(ts.Shape())
-    LOFT_LOG.append(("fw footplate", solid, wires))
-    return solid
+def front_wing_g1(p: CarParams):
+    """G1 front wing after the FIA 2026 concept and Art. 3.10: three spoon-shaped
+    profiles swept back along RS-FW-SECTION out to Y 670, and the four-part endplate
+    of Art. 3.10.6 - body, inboard footplate, outboard footplate (the tip that sticks
+    out ahead of the tyre, to Y 900) and fence - all trimmed by the wheel cylinder."""
+    s = FW_SPAN_G1
+    _, layout = _wing_layout(p.fw_le, p.fw_chords, p.fw_angles, 0, s,
+                             p.fw_gap, p.fw_overlap, p.fw_flap_delta)
+    sweep = lambda y: fw_sweep(p, y)
+    elems = [_spoon_element(x, z, c, a, s, p.fw_tip_rise, sweep=sweep) for x, z, c, a in layout]
+
+    body = _extrude_xz(_rounded_outline(G1_FW_EP_BODY), *G1_FW_EP_BODY_Y)
+    ifp = _extrude_xy(fw_footplate_outline(*G1_FW_IFP[:2]), *G1_FW_IFP[2:])
+    ofp = _extrude_xy(fw_footplate_outline(*G1_FW_OFP[:2]), *G1_FW_OFP[2:])
+    fence = _extrude_xz(_rounded_outline(G1_FW_FENCE), *G1_FW_FENCE_Y)
+    endplate = _fuse(body, ifp, ofp, fence).cut(_wheel_cut())
+    return _fuse(*elems, endplate)
 
 
-def rw_endplate_sections(p: CarParams, n=9):
+def rw_endplate_sections(p: CarParams, n=13):
+    # n chosen by sweep (clean-cad D5): loft escape 13.4 mm at n=9, 0.7 mm at n=13
     """(z, outline points) of the G1 lower rear endplate: stadium sections with the
     same point count at every station (clean-cad D2), keyframes PCHIP-interpolated
     (D1). Returned top to bottom."""

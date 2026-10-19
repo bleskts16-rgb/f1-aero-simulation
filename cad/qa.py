@@ -114,6 +114,39 @@ def loft_local_escape(solid, wires):
     return worst
 
 
+def obscured(shape, polygon, axes, ray_axis, ray_range, step=12.0, margin=1.0):
+    """Check a regulation 'must fully obscure RS-...' rule by ray casting.
+
+    polygon: 2D vertices in the two coordinates named by `axes` (e.g. "xz");
+    rays run along `ray_axis` (e.g. "y") from ray_range[0] to ray_range[1].
+    Grid points `step` apart inside the polygon (shrunk by `margin` mm) are tested;
+    returns (fraction covered, list of uncovered 2D points)."""
+    from matplotlib.path import Path as MPath
+    from OCP.gp import gp_Dir, gp_Lin, gp_Pnt
+    from OCP.IntCurvesFace import IntCurvesFace_ShapeIntersector
+
+    poly = np.asarray(polygon, dtype=float)
+    path = MPath(poly)
+    lo, hi = poly.min(0), poly.max(0)
+    g = np.stack(np.meshgrid(np.arange(lo[0] + step / 2, hi[0], step),
+                             np.arange(lo[1] + step / 2, hi[1], step)), -1).reshape(-1, 2)
+    pts = g[path.contains_points(g, radius=-margin)] if len(g) else g
+    ia, ib, ir = ("xyz".index(axes[0]), "xyz".index(axes[1]), "xyz".index(ray_axis))
+    d = [0.0, 0.0, 0.0]
+    d[ir] = 1.0
+    inter = IntCurvesFace_ShapeIntersector()
+    inter.Load(shape.wrapped, 1e-6)
+    missed = []
+    for a, b in pts:
+        o = [0.0, 0.0, 0.0]
+        o[ia], o[ib], o[ir] = a, b, ray_range[0]
+        inter.Perform(gp_Lin(gp_Pnt(*o), gp_Dir(*d)), 0.0, ray_range[1] - ray_range[0])
+        if not (inter.IsDone() and inter.NbPnt() > 0):
+            missed.append((float(a), float(b)))
+    n = len(pts)
+    return (1.0 - len(missed) / n if n else 0.0), missed
+
+
 def read_stl(path):
     """Triangles (n, 3, 3) from an ASCII or binary STL."""
     raw = path.read_bytes()
