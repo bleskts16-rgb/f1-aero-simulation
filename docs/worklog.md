@@ -67,6 +67,26 @@
    - `scripts/pv_car.py`를 만들었다. STL을 부품별로 불러오고, 반쪽은 Reflect로 전체를 만들고, 색과 카메라를 맞춘다.
    - GUI 실행: `$env:F1_CAR="fia2026_half"; paraview --script=scripts/pv_car.py`
    - 배치 저장: `pvpython scripts/pv_car.py <name> --save <png>`
+   - (정정) 집 PC에는 이미 ParaView 6.0.1이 있었다. 처음에 WSL 안만 찾아보고 "없다"고 잘못 판단했다. 지금은 6.0.1과 6.2.0이 함께 있다.
+5. 커밋 `dc4add2`를 push했다(QA, text-to-cad 참고, 상세 부품, G1, 렌더 도구).
+6. **`run_cfd.py` 버전 선택 버그**:
+   - 집 PC에는 OpenFOAM v2312, v2412, v2512가 모두 있는데, glob 순서 때문에 **v2312**가 잡혔다.
+   - 가장 최신 버전을 고르게 바꿨다(`sort -rV`, `FOAM_BASHRC`가 있으면 그게 우선).
+   - 메싱 중이던 첫 실행은 중단하고 v2512로 다시 돌렸다.
+7. **집 PC 버전 정리**: 이제 **OpenFOAM은 v2512, ParaView는 6.2.0만** 있다.
+   - ParaView 6.0.1을 제거했다(MSI).
+   - OpenFOAM v2312·v2412 apt 패키지를 제거했다. 설정 파일만 남은 `rc` 상태다.
+     boost, cgal 등 개발 라이브러리는 v2512-dev를 설치할 때 쓸 수 있어서 남겼다.
+   - `~/.bashrc`에서 없는 경로(`/opt/openfoam2312`, `/opt/openfoam2512`)를 불러오던 두 줄을 지웠다. 백업은 `~/.bashrc.bak`이다.
+8. **집 PC L1 재현 해석**(회사 기록의 4번 할 일): G0 baseline 반쪽 모델, L1, 3000회, np 6. 결과는 [results/home_L1/summary.md](results/home_L1/summary.md)에 있다.
+   - 셀 772,490개. 회사는 772,822개였다.
+   - **CL·A 1.337 ± 0.017, CD·A 1.166 ± 0.005**. 회사는 1.352와 1.158이었다. 차이 −1.1 %와 +0.7 %는 통계 오차 수준이라 **집 PC 환경이 회사 결과를 재현한다.**
+   - 시간: 메싱 1.4분, 해석 46.3분(0.91 s/회). 비용은 7.1 코어·초/(100만 셀·반복)이다.
+
+### 다음 할 일 (10-17 기준)
+1. (회사) grid2 격자 연구. 바닥 아래 리파인 박스를 넣고 첫 층 두께를 고정한다.
+2. 상세 부품과 G1을 CFD에 연결한다: `make_cfd_case.py`의 `PARTS`와 snappy 템플릿을 확장한다. 집 PC L1이면 한 케이스에 약 50분이다.
+3. 2026 규정 PDF로 웨이크 보드, 앞날개 끝단, 바닥의 기준 볼륨을 확인한다.
 
 ---
 

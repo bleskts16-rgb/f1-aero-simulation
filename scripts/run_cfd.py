@@ -5,8 +5,8 @@
 On Windows the case is copied into the WSL file system (~/f1cfd/<name>; running on
 /mnt/c is several times slower), run there, and logs + postProcessing/ are copied
 back. On Linux it runs in place. OpenFOAM is loaded from $FOAM_BASHRC if set,
-otherwise the first of /usr/lib/openfoam/openfoam*/etc/bashrc, /opt/openfoam*/etc/bashrc,
-~/ofenv.sh that exists.
+otherwise from the newest /usr/lib/openfoam/openfoam*/etc/bashrc or
+/opt/openfoam*/etc/bashrc, otherwise ~/ofenv.sh.
 """
 import argparse
 import os
@@ -17,7 +17,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 LOAD_FOAM = r"""
-for f in "$FOAM_BASHRC" /usr/lib/openfoam/openfoam*/etc/bashrc /opt/openfoam*/etc/bashrc "$HOME/ofenv.sh"; do
+# newest installed version first (a plain glob picked v2312 over v2512)
+for f in "$FOAM_BASHRC" $(ls -1d /usr/lib/openfoam/openfoam*/etc/bashrc /opt/openfoam*/etc/bashrc \
+         2>/dev/null | sort -rV) "$HOME/ofenv.sh"; do
     if [ -n "$f" ] && [ -f "$f" ]; then . "$f"; break; fi
 done
 [ -n "$WM_PROJECT_DIR" ] || { echo "OpenFOAM not found - set FOAM_BASHRC"; exit 1; }
