@@ -122,6 +122,42 @@ class CarParams:
                                        self.wheelbase))
 
 
+# ------------------------------------------------- G1 design tables (clean-cad)
+# Rear-wing endplate, part beside the wing (FIA 2026 renders): side outline
+# (dX from XR, Z, corner radius). Straight runs + tangent arcs never leave the hull
+# of these vertices (a periodic spline overshot the 880 mm limit by 38 mm).
+# Its lower edge is flat at Z 460 over X 400..650 so the lower endplate's first
+# station (Z 470, same X ends) sits inside it: one shared station, no step (J1).
+G1_RW_EP_UPPER = ((230.0, 878.0, 45.0), (650.0, 878.0, 35.0), (650.0, 460.0, 0.0),
+                  (400.0, 460.0, 0.0), (320.0, 520.0, 60.0), (225.0, 650.0, 45.0))
+# Rear-wing endplate lower part, after 2026 cars (Ferrari SF-26, flow-vis photos):
+# the endplate runs down behind the rear tyre and turns inboard into the diffuser
+# outer wall. Horizontal stadium sections (15 mm thick, bull-nosed ends) lofted
+# through these keyframes; values between them by monotone cubic (PCHIP).
+#   (Z car frame, X front from XR, X rear from XR, Y centre)
+G1_RW_EP_LOWER = ((470.0, 400.0, 650.0, 552.5), (380.0, 405.0, 632.0, 540.0),
+                  (300.0, 410.0, 610.0, 500.0), (230.0, 400.0, 580.0, 440.0),
+                  (180.0, 380.0, 560.0, 395.0))
+G1_RW_EP_THICK = 15.0
+# Diffuser outer-wall extension tying the endplate foot to the diffuser exit,
+# side outline (dX from XR, Z, corner radius), Y 382..398 (overlaps the fence 375..390)
+G1_RW_DIFF_LINK = ((100.0, 40.0, 0.0), (100.0, 195.0, 10.0), (420.0, 232.0, 40.0),
+                   (570.0, 200.0, 20.0), (570.0, 160.0, 20.0), (380.0, 120.0, 40.0))
+G1_RW_DIFF_LINK_Y = (382.0, 398.0)
+# Front-wing endplate side outline (X, Z, corner radius) before the wheel cut, and
+# the J-section footplate at its base (Y, Z, corner radius) after 2026 cars (Ferrari,
+# Haas, Mercedes): a foot that runs outboard along the bottom and curls up. Stays
+# inside RV-FWEP-BODY |Y| <= 680.
+G1_FW_EP_SIDE = ((-1250.0, 40.0, 0.0), (-1245.0, 300.0, 40.0), (-1120.0, 410.0, 70.0),
+                 (-640.0, 410.0, 60.0), (-430.0, 330.0, 40.0), (-430.0, 40.0, 0.0))
+G1_FW_FOOT = ((628.0, 40.0, 0.0), (678.0, 40.0, 14.0), (678.0, 125.0, 4.0),
+              (667.0, 125.0, 4.0), (667.0, 52.0, 6.0), (628.0, 52.0, 0.0))
+# The curl height varies along X so the foot rises from both ends instead of
+# stopping as a cut-off extrusion (clean-cad W3): (X, curl top Z), PCHIP between.
+G1_FW_FOOT_CURL = ((-1235.0, 62.0), (-1120.0, 125.0), (-760.0, 140.0), (-470.0, 70.0))
+G1_FW_FOOT_X = (-1235.0, -470.0)
+
+
 # ---------------------------------------------------------------- primitives
 
 def _superellipse(x, a, z0, z1, n=3.0, npts=13):
@@ -400,9 +436,82 @@ def front_wing(p: CarParams):
         elems = [_spoon_element(x, z, c, a, s, rise) for x, z, c, a in layout]
     # Endplate in RV-FWEP-BODY (App.1 §19): Y 600..680, cut by an R412.5 cylinder
     # around [XF, Z] = [0, 360] for front-wheel clearance
-    plate = _box(-1250, -430, s - 10, s + 2, 40, 330 + rise)
+    extra = []
+    if p.geom_level == "G1":
+        plate = _extrude_xz(_rounded_outline(G1_FW_EP_SIDE), s - 10, s + 2)
+        extra.append(fw_footplate())
+    else:
+        plate = _box(-1250, -430, s - 10, s + 2, 40, 330 + rise)
     plate = plate.cut(cq.Solid.makeCylinder(412.5, 1000, V(0, 0, 360), V(0, 1, 0)))
-    return _fuse(*elems, plate)
+    return _fuse(*elems, plate, *extra)
+
+
+def fw_foot_sections(n=11):
+    """(x, outline) of the G1 footplate: the J section of G1_FW_FOOT with its curl
+    top set by G1_FW_FOOT_CURL at each station. Same vertices and radii at every
+    station, so every outline has the same point count (clean-cad D2)."""
+    from scipy.interpolate import PchipInterpolator
+    k = np.array(G1_FW_FOOT_CURL)
+    curl = PchipInterpolator(k[:, 0], k[:, 1])
+    out = []
+    for x in np.linspace(*G1_FW_FOOT_X, n):
+        top = float(curl(x))
+        verts = [(y, top if z == 125.0 else z, r) for y, z, r in G1_FW_FOOT]
+        out.append((float(x), _rounded_outline(verts)))
+    return out
+
+
+def fw_footplate():
+    """G1 endplate foot: J-shaped section (out along the bottom, curled up at the
+    outer edge) lofted along X under the endplate, curl rising from both ends."""
+    wires = [cq.Wire.makePolygon([V(x, y, z) for y, z in ring], close=True)
+             for x, ring in fw_foot_sections()]
+    ts = BRepOffsetAPI_ThruSections(True, False, 1e-6)
+    ts.SetParType(Approx_Centripetal)
+    for w in wires:
+        ts.AddWire(w.wrapped)
+    ts.Build()
+    solid = cq.Solid(ts.Shape())
+    LOFT_LOG.append(("fw footplate", solid, wires))
+    return solid
+
+
+def rw_endplate_sections(p: CarParams, n=9):
+    """(z, outline points) of the G1 lower rear endplate: stadium sections with the
+    same point count at every station (clean-cad D2), keyframes PCHIP-interpolated
+    (D1). Returned top to bottom."""
+    from scipy.interpolate import PchipInterpolator
+    k = np.array(G1_RW_EP_LOWER)[::-1]                 # ascending Z for PCHIP
+    f = [PchipInterpolator(k[:, 0], k[:, i]) for i in (1, 2, 3)]
+    h = G1_RW_EP_THICK / 2
+    out = []
+    for z in np.linspace(k[-1, 0], k[0, 0], n):
+        x0, x1, yc = (float(fi(z)) for fi in f)
+        ring = _rounded_outline([(p.xr + x0, yc - h, h), (p.xr + x1, yc - h, h),
+                                 (p.xr + x1, yc + h, h), (p.xr + x0, yc + h, h)], n_arc=6)
+        out.append((float(z), ring))
+    return out
+
+
+def rw_endplate_lower(p: CarParams):
+    """G1 rear endplate below the wing, lofted through `rw_endplate_sections`."""
+    wires = [cq.Wire.makePolygon([V(x, y, z) for x, y in ring], close=True)
+             for z, ring in rw_endplate_sections(p)]
+    ts = BRepOffsetAPI_ThruSections(True, False, 1e-6)
+    ts.SetParType(Approx_Centripetal)
+    for w in wires:
+        ts.AddWire(w.wrapped)
+    ts.Build()
+    solid = cq.Solid(ts.Shape())
+    LOFT_LOG.append(("rw endplate lower", solid, wires))
+    return solid
+
+
+def rw_diffuser_link(p: CarParams):
+    """G1 diffuser outer-wall extension from the diffuser exit to the endplate foot."""
+    y0, y1 = G1_RW_DIFF_LINK_Y
+    outline = _rounded_outline([(p.xr + dx, z, r) for dx, z, r in G1_RW_DIFF_LINK])
+    return _extrude_xz(outline, y0, y1)
 
 
 def rear_wing(p: CarParams):
@@ -411,19 +520,16 @@ def rear_wing(p: CarParams):
     elems = _wing_stack((x0, z0), p.rw_chords, p.rw_angles, 0, s,
                         p.rw_gap, p.rw_overlap, p.rw_flap_delta)
     # Endplate in RV-RWEP-BODY (App.1 §26, upper part only), Y 540..575
+    extra = []
     if p.geom_level == "G1":
-        # G1: tall endplate with rounded corners and a curved leading edge that
-        # sweeps down towards the rear tyre, as on the FIA 2026 renders
-        # (dx from XR, Z, corner radius); straight runs + arcs never leave the hull of
-        # these vertices (a periodic spline overshot the 880 mm limit by 38 mm)
-        outline = _rounded_outline([(230, 878, 45), (650, 878, 35), (650, 540, 70),
-                                    (470, 440, 90), (320, 520, 70), (225, 650, 45)])
+        extra = [rw_endplate_lower(p), rw_diffuser_link(p)]
+        outline = _rounded_outline(G1_RW_EP_UPPER)
         plate = _extrude_xz([(p.xr + dx, z) for dx, z in outline], s - 7, s + 8)
     else:
         plate = _box(p.xr + 225, p.xr + 650, s - 7, s + 8, 690, 878)
     # Central pylon, |Y| < 12.5 (3.11.4), from tail up to the main plane
     pylon = _box(p.xr + 240, p.xr + 380, 0, 10, 270, z0 + 20)
-    return _fuse(*elems, plate, pylon)
+    return _fuse(*elems, plate, pylon, *extra)
 
 
 def _strut(p0, p1, chord=60.0, thick=18.0, ext=10.0):
