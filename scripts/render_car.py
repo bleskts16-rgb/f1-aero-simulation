@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 COLORS = {"body": "#22305a", "front_wing": "#1b1b1f", "rear_wing": "#1b1b1f",
           "wheels_front": "#2a2a2a", "wheels_rear": "#2a2a2a", "halo": "#8d939c",
-          "wake_boards": "#1b1b1f", "mirrors": "#22305a",
+          "wake_boards": "#1b1b1f", "mirrors": "#22305a", "helmet": "#e0b33a",
           "suspension_front": "#3a3d44", "suspension_rear": "#3a3d44"}
 
 # (title, camera position, focal point, up) in metres; X rearward, Y right, Z up

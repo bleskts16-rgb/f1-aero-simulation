@@ -189,11 +189,47 @@ RS_FWEP_SIDE = ((-975, 55), (-975, 225), (-650, 370), (-420, 370), (-410, 225),
 G1_HELMET_LENGTH = 300.0
 # The end stations are small and sit at mid height, so the nose and tail close as
 # rounded caps (a first draft ending at full height gave flat end faces and a
-# vertical wall at the front).
-G1_HELMET = ((-1.00, 12.0, 700.0, 760.0, 2.0), (-0.90, 62.0, 655.0, 805.0, 2.2),
-             (-0.65, 100.0, 635.0, 834.0, 2.4), (-0.25, 117.0, 635.0, 848.0, 2.4),
-             (0.15, 120.0, 638.0, 846.0, 2.4), (0.55, 112.0, 642.0, 828.0, 2.4),
-             (0.85, 80.0, 650.0, 795.0, 2.2), (1.00, 15.0, 692.0, 738.0, 2.0))
+# vertical wall at the front). The bottom is buried ~50 mm below the G1 crown
+# (Z 650..690 here) and the end caps sit clearly above it: a helmet bottom within
+# a few mm of the crown made the fuse invalid (near-tangent surfaces).
+G1_HELMET = ((-1.00, 12.0, 705.0, 760.0, 2.0), (-0.90, 62.0, 610.0, 805.0, 2.2),
+             (-0.65, 100.0, 600.0, 834.0, 2.4), (-0.25, 117.0, 600.0, 848.0, 2.4),
+             (0.15, 120.0, 600.0, 846.0, 2.4), (0.55, 112.0, 605.0, 828.0, 2.4),
+             (0.85, 80.0, 615.0, 795.0, 2.2), (1.00, 15.0, 715.0, 748.0, 2.0))
+
+
+# Body spine (nose -> survival cell -> engine cover -> tail), clean-cad D1-D4.
+# Every station is the same rounded section with ONE shoulder crease (L4): flat
+# bottom, flank flaring out to the shoulder knuckle, roof falling to a crown that
+# is level at Y = 0. Columns: (anchor, dX, Z bottom, bottom half width, Z shoulder,
+# shoulder half width, Z roof edge, roof half width, Z crown); anchor F/C/R = front
+# axle / cockpit rear XC / rear axle. Envelope (bottom..crown, shoulder width)
+# follows the G0 spine, so the regulation boxes and the suspension anchors hold.
+G1_BODY = (("F", -1250, 150, 20, 180, 38, 205, 25, 212),
+           ("F", -1150, 135, 45, 185, 75, 228, 45, 240),
+           ("F", -900, 130, 70, 215, 110, 285, 70, 302),
+           ("F", -500, 145, 95, 280, 150, 395, 95, 420),
+           ("F", -100, 160, 120, 360, 190, 510, 120, 540),
+           ("F", 500, 60, 170, 430, 232, 590, 150, 620),
+           ("F", 900, 10, 210, 470, 265, 620, 170, 640),
+           ("C", -450, 10, 230, 490, 290, 640, 190, 655),
+           ("C", -230, 10, 235, 520, 300, 680, 200, 700),
+           ("C", -80, 10, 230, 560, 285, 790, 170, 830),
+           ("C", 20, 10, 215, 590, 260, 900, 140, 940),
+           ("C", 320, 10, 190, 560, 230, 840, 120, 880),
+           ("R", -700, 30, 150, 440, 190, 600, 110, 640),
+           ("R", -200, 80, 110, 340, 140, 450, 80, 480),
+           ("R", -50, 120, 85, 300, 110, 380, 65, 400),
+           ("R", 350, 230, 40, 290, 60, 322, 35, 330))
+# corner radii of the section: bottom edge, shoulder knuckle (D3: 5-10 mm), roof
+# edge, crown; points per straight run / per arc (same at every station, D2)
+G1_BODY_R = (30.0, 10.0, 60.0, 40.0)
+G1_BODY_N_RUN, G1_BODY_N_ARC = 6, 6
+# Stations are cosine-spaced (dense at nose and tail, where the table changes
+# fastest). Swept (clean-cad D5): uniform 25 self-intersected (BRepAlgoAPI_Check)
+# with a 19.9 mm tail bulge, uniform 41 still self-intersected, cosine 25 was
+# clean with 10.3 mm, cosine 33 clean with 1.1 mm.
+G1_BODY_STATIONS = 33
 
 
 def fw_section_x(y):
@@ -382,13 +418,121 @@ def _spine_sections(p: CarParams):
     ]
 
 
+def _spine_envelope(p: CarParams):
+    """(X, half width, z bottom, z top) of the spine, for chassis_point."""
+    if p.geom_level == "G1":
+        k = g1_body_table(p)
+        return k[:, [0, 4, 1, 7]]
+    return np.array([s[:4] for s in _spine_sections(p)], dtype=float)
+
+
 def chassis_point(p: CarParams, x, fy, fz):
     """A point inside the spine at station x (car frame): fy = fraction of the local
     half width, fz = fraction of the local height. fy <= 0.6 with 0.15 <= fz <= 0.85
-    is always inside the superellipse, so members anchored there overlap the body."""
-    sec = np.array([s[:4] for s in _spine_sections(p)], dtype=float)
+    is inside the spine section (G0 superellipse, G1 crease section), so members
+    anchored there overlap the body (cad.qa.attached checks it)."""
+    sec = _spine_envelope(p)
     a, z0, z1 = (np.interp(x, sec[:, 0], sec[:, i]) for i in (1, 2, 3))
     return V(x, fy * a, z0 + fz * (z1 - z0))
+
+
+def g1_body_table(p: CarParams):
+    """G1_BODY with absolute X: columns X, zb, ab, zsh, ash, zt, at, zc."""
+    base = {"F": 0.0, "C": p.xc, "R": p.xr}
+    return np.array([(base[a] + dx, *rest) for a, dx, *rest in G1_BODY], dtype=float)
+
+
+def _fixed_count_corners(verts, radii, n_run, n_arc):
+    """Open polyline verts[0] -> verts[-1] with every interior vertex replaced by a
+    tangent arc of its radius. Each straight run gets n_run points and each arc
+    n_arc + 1, whatever the geometry, so sections built from the same vertex list
+    always have the same point count and the corners land on the same indices
+    (clean-cad D2, D3)."""
+    P = np.asarray(verts, dtype=float)
+    arcs = []
+    for i in range(1, len(P) - 1):
+        d0 = P[i] - P[i - 1]
+        d1 = P[i + 1] - P[i]
+        l0, l1 = np.linalg.norm(d0), np.linalg.norm(d1)
+        d0, d1 = d0 / l0, d1 / l1
+        turn = math.atan2(d0[0] * d1[1] - d0[1] * d1[0], float(d0 @ d1))
+        t = min(radii[i - 1] * math.tan(abs(turn) / 2), 0.45 * l0, 0.45 * l1)
+        a, b = P[i] - d0 * t, P[i] + d1 * t
+        if abs(turn) < 1e-6:
+            arcs.append(np.linspace(a, b, n_arc + 1))
+            continue
+        r = t / math.tan(abs(turn) / 2)
+        sgn = 1.0 if turn > 0 else -1.0
+        c = a + sgn * r * np.array([-d0[1], d0[0]])
+        v = a - c
+        ang = turn * np.arange(n_arc + 1) / n_arc
+        arcs.append(c + np.column_stack([v[0] * np.cos(ang) - v[1] * np.sin(ang),
+                                         v[0] * np.sin(ang) + v[1] * np.cos(ang)]))
+    out = []
+    start = P[0]
+    for arc in arcs:
+        out += list(np.linspace(start, arc[0], n_run, endpoint=False))
+        out += list(arc[:-1])
+        start = arc[-1]
+    out += list(np.linspace(start, P[-1], n_run))
+    return np.array(out)
+
+
+def g1_body_sections(p: CarParams, n=None):
+    """(x, (m, 2) array of (y, z)) half sections of the G1 spine at n cosine-spaced
+    stations, every column PCHIP-interpolated along X (clean-cad D1)."""
+    from scipy.interpolate import PchipInterpolator
+    n = n or G1_BODY_STATIONS
+    k = g1_body_table(p)
+    f = [PchipInterpolator(k[:, 0], k[:, i]) for i in range(1, 8)]
+    out = []
+    x0, x1 = k[0, 0], k[-1, 0]
+    for x in x0 + (x1 - x0) * 0.5 * (1 - np.cos(np.linspace(0.0, np.pi, n))):
+        zb, ab, zsh, ash, zt, at, zc = (float(fi(x)) for fi in f)
+        verts = [(0.0, zb), (ab, zb), (ash, zsh), (at, zt), (0.4 * at, zc), (0.0, zc)]
+        out.append((float(x), _fixed_count_corners(verts, G1_BODY_R, G1_BODY_N_RUN, G1_BODY_N_ARC)))
+    return out
+
+
+def _shared_params(sections):
+    """One spline parameter list for all sections: the mean of their normalised
+    chord-length parameters. Splines interpolated with their own parameters get
+    different knot vectors, and ThruSections then merges them into a surface with
+    ~23x the poles (35208 vs 1512 here), which made the body booleans crawl."""
+    u = []
+    for pts in sections:
+        d = np.r_[0.0, np.cumsum(np.linalg.norm(np.diff(pts, axis=0), axis=1))]
+        u.append(d / d[-1])
+    return list(np.mean(u, axis=0))
+
+
+G1_SPINE_OVERLAP = 5.0   # sections run this far past Y = 0 (see _g1_spine)
+
+
+def _g1_spine(p: CarParams):
+    """G1 spine lofted through g1_body_sections: each section is a spline through
+    its points, extended G1_SPINE_OVERLAP mm past Y = 0 along its level ends (D4)
+    and closed by a line there; all splines share one parameterisation
+    (compatible sections, light surface). body() trims at Y = 0 with a box, so the
+    symmetry face is a true plane: with the loft's own Y = 0 face (a B-spline
+    lofted from lines) fusing the half body with its mirror never finished."""
+    secs = g1_body_sections(p)
+    d = G1_SPINE_OVERLAP
+    secs = [(x, np.vstack([[-d, pts[0, 1]], pts, [-d, pts[-1, 1]]])) for x, pts in secs]
+    params = _shared_params([pts for _, pts in secs])
+    wires = []
+    for x, pts in secs:
+        q = [V(x, y, z) for y, z in pts]
+        wires.append(cq.Wire.assembleEdges([cq.Edge.makeSpline(q, parameters=params),
+                                            cq.Edge.makeLine(q[-1], q[0])]))
+    ts = BRepOffsetAPI_ThruSections(True, False, 1e-6)
+    ts.SetParType(Approx_Centripetal)
+    for w in wires:
+        ts.AddWire(w.wrapped)
+    ts.Build()
+    solid = cq.Solid(ts.Shape())
+    LOFT_LOG.append(("spine", solid, wires))
+    return solid
 
 
 def body(p: CarParams):
@@ -396,7 +540,7 @@ def body(p: CarParams):
     # Nose + survival cell inside RV-BODY-FRONT (App.1 §8: |Y| <= 150..400, Z <= 645),
     # then engine cover / airbox inside RV-EC (App.1 §13: Z <= 970 at XC..XC+300)
     # and the tail inside RV-TAIL (App.1 §15). One loft avoids a slow boolean.
-    spine = _loft(_spine_sections(p), label="spine")
+    spine = _g1_spine(p) if p.geom_level == "G1" else _loft(_spine_sections(p), label="spine")
     # Closed sidepods, inside RV-SIDEPOD + RV-EC (|Y| <= 715, Z <= 600)
     if p.geom_level == "G1":
         # deep undercut at the front (the floor stays below an open channel), top
@@ -410,13 +554,15 @@ def body(p: CarParams):
                 (xr - 100, 170, 60, 300)]
     sidepods = _loft(pods, n=3.5, label="sidepods")
     if p.geom_level == "G1":
-        helmet = _loft(helmet_sections(p), label="helmet")
+        # G1: the helmet is its own part (see helmet()); fusing the half helmet into
+        # the G1 crease spine left an invalid face (both carry a face on Y = 0)
+        helmet = []
     else:
         # helmet: a sphere built from the same half sections, so it mirrors cleanly
         r, hx, hz = 125.0, xc - 450, 720.0
-        helmet = _loft([(hx - r * math.cos(f), r * math.sin(f), hz - r * math.sin(f),
-                         hz + r * math.sin(f), 2.0) for f in np.radians(np.linspace(12, 168, 9))],
-                       label="helmet")
+        helmet = [_loft([(hx - r * math.cos(f), r * math.sin(f), hz - r * math.sin(f),
+                          hz + r * math.sin(f), 2.0) for f in np.radians(np.linspace(12, 168, 9))],
+                        label="helmet")]
 
     # Floor body planform (App.1 §4.1/§4.9), flat bottom on Z=0 ahead of the diffuser
     xd = xr + p.diffuser_start
@@ -433,10 +579,15 @@ def body(p: CarParams):
         extra.append(airbox(p))
     # nothing of the sprung body may hang below Z=0 (2.7a); also trims loft overshoot
     above_ref = _box(-2000, 6000, 0, 1000, 0, 1500)
-    out = _fuse(spine, sidepods, helmet, plate, ramp, fence, *extra).intersect(above_ref)
+    out = _fuse(spine, sidepods, *helmet, plate, ramp, fence, *extra).intersect(above_ref)
     if p.geom_level == "G1":
         out = out.cut(airbox_mouth(p))
     return out
+
+
+def helmet(p: CarParams):
+    """G1 helmet as a separate part (Y >= 0, car frame) sitting into the body."""
+    return _loft(helmet_sections(p), label="helmet")
 
 
 def helmet_sections(p: CarParams, n=17):
@@ -779,6 +930,8 @@ def to_ground(shape, p: CarParams):
 def sprung_parts(p: CarParams = CarParams()):
     """Body, wings and enabled detail parts, Y >= 0 half, in the car frame."""
     parts = {"body": body(p), "front_wing": front_wing(p), "rear_wing": rear_wing(p)}
+    if p.geom_level == "G1":
+        parts["helmet"] = helmet(p)
     if p.halo:
         parts["halo"] = halo(p)
     if p.wake_boards:
@@ -798,5 +951,26 @@ def build_car(p: CarParams = CarParams(), sprung=None, half=False):
     parts.update(wheels(p))
     if half:
         return parts
+    if p.geom_level == "G1":
+        return {k: _mirror_glue_full(v) for k, v in parts.items()}
     # glue: the halves share the Y=0 face exactly
     return {k: v.fuse(v.mirror("XZ"), glue=True).clean() for k, v in parts.items()}
+
+
+def _mirror_glue_full(shape):
+    """Fuse a Y >= 0 half with its mirror using BOPAlgo_GlueFull: the halves only
+    touch on the Y = 0 plane, so no face/face intersection is needed. The G1 crease
+    spine meets Y = 0 level (tangent halves), and the default fuse (with or without
+    GlueShift) did not finish in 5 min; GlueFull takes 0.2 s."""
+    from OCP.BOPAlgo import BOPAlgo_GlueFull
+    from OCP.BRepAlgoAPI import BRepAlgoAPI_Fuse
+    from OCP.TopTools import TopTools_ListOfShape
+    args, tools = TopTools_ListOfShape(), TopTools_ListOfShape()
+    args.Append(shape.wrapped)
+    tools.Append(shape.mirror("XZ").wrapped)
+    op = BRepAlgoAPI_Fuse()
+    op.SetArguments(args)
+    op.SetTools(tools)
+    op.SetGlue(BOPAlgo_GlueFull)
+    op.Build()
+    return cq.Shape.cast(op.Shape()).clean()

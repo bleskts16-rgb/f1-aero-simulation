@@ -28,7 +28,7 @@ from cad.car2026 import CarParams, sprung_parts, build_car, _wing_stack  # noqa:
 
 COLORS = {"body": "#3b4a6b", "front_wing": "#b0413e", "rear_wing": "#b0413e",
           "wheels_front": "#2b2b2b", "wheels_rear": "#2b2b2b",
-          "halo": "#9aa0a8", "wake_boards": "#b0413e", "mirrors": "#3b4a6b",
+          "halo": "#9aa0a8", "wake_boards": "#b0413e", "mirrors": "#3b4a6b", "helmet": "#e0b33a",
           "suspension_front": "#6b7280", "suspension_rear": "#6b7280"}
 # parts that must clear the tyres
 CLEAR_OF_TYRES = ("body", "front_wing", "rear_wing", "halo", "wake_boards", "mirrors")
@@ -125,7 +125,7 @@ def geometry_checks(parts, outdir, half):
                                f"{excess:.1f} mm{where} (limit {qa.LOFT_ESCAPE_LIMIT:.0f})"))
     for name, shape in parts.items():
         checks += qa.solid_checks(name, shape, expect[name])
-    for name in ("halo", "wake_boards", "mirrors"):
+    for name in ("halo", "wake_boards", "mirrors", "helmet"):
         if name in parts:
             checks += qa.attached(name, parts[name], {"body": parts["body"]})
     for name, wheel in (("suspension_front", "wheels_front"), ("suspension_rear", "wheels_rear")):
