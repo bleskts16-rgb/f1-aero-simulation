@@ -72,6 +72,16 @@ class CarParams:
     # wing with tall endplates, sidepods with a deep undercut and a downwash top.
     geom_level: str = "G0"
     fw_tip_rise: float = 80.0                # G1: front wing tips raised by this [mm]
+    # G1 wheels (clean-cad T1): tyre cross-section revolved about the axle, on an
+    # 18" rim (462.6 mm, Art. 10.7.2) with dished wheel covers. One closed solid per
+    # wheel, so it stays a single rotating wall in CFD.
+    rim_diameter: float = 462.6
+    tyre_bead_inset: float = 18.0            # sidewall bulge: max width minus bead width, per side
+    tyre_shoulder_w: float = 42.0            # shoulder roll, axial half-axis
+    tyre_shoulder_h: float = 58.0            # shoulder roll, radial half-axis
+    cover_recess: float = 20.0               # outer wheel cover below the tyre face, at the rim
+    cover_dish: float = 10.0                 # extra depth of the cover at the hub
+    inner_recess: float = 15.0               # inner (brake side) closing face below the tyre face
 
     # Optional detail parts. All off = the G0 car used by the grid studies.
     halo: bool = False
@@ -530,11 +540,54 @@ def mirrors(p: CarParams):
     return _fuse(housing, stalk)
 
 
+def tyre_profile(p: CarParams, d, w, n_side=28, n_shoulder=14, n_tread=10):
+    """G1 wheel half cross-section as (y, r) points: y axial from the inner tyre face
+    (0) to the outer face (w), r radial from the axle. Returns (curve, closing):
+    `curve` is the smooth tyre outline from the outer bead over the tread to the
+    inner bead; `closing` runs inner bead -> inner face -> axle -> wheel cover ->
+    outer bead as straight segments. Sidewall bulge follows t**0.55 from the bead
+    to the widest point (clean-cad T1, after text-to-cad wheels.py), then a quarter
+    ellipse rolls the shoulder into a flat tread."""
+    R = d / 2
+    r_rim = p.rim_diameter / 2
+    r_bead = r_rim + 12.0
+    r_max = R - p.tyre_shoulder_h                 # widest point = start of shoulder roll
+    bi, sw, sh = p.tyre_bead_inset, p.tyre_shoulder_w, p.tyre_shoulder_h
+
+    t = np.linspace(0.0, 1.0, n_side)
+    side = [(w - bi * (1 - ti ** 0.55), r_bead + (r_max - r_bead) * ti) for ti in t]
+    th = np.linspace(0.0, np.pi / 2, n_shoulder)[1:]
+    shoulder = [(w - sw + sw * math.cos(a), r_max + sh * math.sin(a)) for a in th]
+    tread = [(yy, R) for yy in np.linspace(w - sw, sw, n_tread)[1:-1]]
+    outer = side + shoulder                                  # outer face, bead -> tread
+    curve = outer + tread + [(w - yy, rr) for yy, rr in reversed(outer)]
+
+    closing = [(p.inner_recess, r_rim), (p.inner_recess, 0.0),
+               (w - p.cover_recess - p.cover_dish, 0.0), (w - p.cover_recess, r_rim)]
+    return curve, closing
+
+
+def _revolved_wheel(p: CarParams, x, d, w):
+    """Closed solid of revolution about the axle (Y direction) in the ground frame."""
+    y0 = p.half_width - w
+    zc = d / 2 - p.tyre_squash
+    curve, closing = tyre_profile(p, d, w)
+    P = lambda yy, rr: V(x, y0 + yy, zc + rr)
+    edges = [cq.Edge.makeSpline([P(*q) for q in curve])]
+    pts = [curve[-1]] + closing + [curve[0]]
+    edges += [cq.Edge.makeLine(P(*a), P(*b)) for a, b in zip(pts, pts[1:])]
+    wire = cq.Wire.assembleEdges(edges)
+    return cq.Solid.revolve(cq.Face.makeFromWires(wire), 360.0, V(x, 0, zc), V(x, 1, zc))
+
+
 def wheels(p: CarParams):
     """Right-hand front and rear tyres, already in the ground frame."""
     out = {}
     for name, x, d, w in (("wheels_front", 0.0, p.tyre_f_diameter, p.tyre_f_width),
                           ("wheels_rear", p.xr, p.tyre_r_diameter, p.tyre_r_width)):
+        if p.geom_level == "G1":
+            out[name] = _revolved_wheel(p, x, d, w)
+            continue
         cyl = cq.Solid.makeCylinder(d / 2, w, V(x, p.half_width - w, d / 2 - p.tyre_squash),
                                     V(0, 1, 0))
         out[name] = cq.Workplane().add(cyl).edges("%CIRCLE").fillet(p.tyre_shoulder).val()
