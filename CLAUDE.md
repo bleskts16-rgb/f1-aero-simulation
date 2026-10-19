@@ -33,6 +33,9 @@ F1 셋업 → 파라메트릭 CAD → OpenFOAM → 공력 서로게이트 → QS
   Richardson 외삽·GCI는 단조 수렴이고 0.5 ≤ p ≤ 3이며 단계 간 변화가 통계 오차보다 클 때만 쓴다(`grid_study.py`가 판정).
 
 ## CAD 작업 규칙 (text-to-cad 참고, [docs/references/text-to-cad-f1.md](docs/references/text-to-cad-f1.md))
+- 형상을 만들거나 고칠 때는 **`clean-cad` 스킬**([.claude/skills/clean-cad/SKILL.md](.claude/skills/clean-cad/SKILL.md))의 순서와 규칙을 따른다.
+  순서: 브리프 → 스펙 → 2D 단면 확인 → 3D → QA → 렌더 체크리스트.
+  프롬프트 틀은 [prompt-template.md](.claude/skills/clean-cad/references/prompt-template.md)에 있다.
 - 형상을 바꾸면 `build_car.py`를 돌려 규정 점검과 `cad/qa.py` 검사(로프트 이탈, 양의 부피, 불리언 적합성, STL 닫힘)가 모두 OK인지 확인한다.
   NG가 있으면 exit 1이다. **계산 실패나 확인하지 않은 항목은 통과가 아니다.** 보고할 때 실제로 돌린 검사와 확인하지 않은 항목을 구분한다.
 - 형상을 바꾼 뒤에는 렌더를 직접 열어 확인한다. `render_car.py`(pyvista)는 깊이 정렬이 정확하고, `build_car.py`의 matplotlib 6면 그림은 빠른 확인용이다.
