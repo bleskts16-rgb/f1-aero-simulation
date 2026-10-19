@@ -182,6 +182,20 @@ RS_FWEP_SIDE = ((-975, 55), (-975, 225), (-650, 370), (-420, 370), (-410, 225),
                 (-305, 55))                                               # [XF, Z], from inboard
 
 
+# Helmet (clean-cad L6: no visible sphere). Keyframes along u = -1 (front) .. +1
+# (rear) over a 300 mm length centred where the G0 sphere was: (u, half width,
+# Z bottom, Z top, superellipse exponent). Steep visor face at the front, crown at
+# u ~ 0, gentler fall to the rear; the bottom stays inside the chassis (no gap).
+G1_HELMET_LENGTH = 300.0
+# The end stations are small and sit at mid height, so the nose and tail close as
+# rounded caps (a first draft ending at full height gave flat end faces and a
+# vertical wall at the front).
+G1_HELMET = ((-1.00, 12.0, 700.0, 760.0, 2.0), (-0.90, 62.0, 655.0, 805.0, 2.2),
+             (-0.65, 100.0, 635.0, 834.0, 2.4), (-0.25, 117.0, 635.0, 848.0, 2.4),
+             (0.15, 120.0, 638.0, 846.0, 2.4), (0.55, 112.0, 642.0, 828.0, 2.4),
+             (0.85, 80.0, 650.0, 795.0, 2.2), (1.00, 15.0, 692.0, 738.0, 2.0))
+
+
 def fw_section_x(y):
     """X of RS-FW-SECTION at |Y| = y (the swept front limit of the front wing)."""
     (x0, y0), (x1, y1) = RS_FW_SECTION
@@ -395,11 +409,14 @@ def body(p: CarParams):
                 (1900, 650, 10, 520), (2500, 520, 10, 430), (3000, 320, 10, 340),
                 (xr - 100, 170, 60, 300)]
     sidepods = _loft(pods, n=3.5, label="sidepods")
-    # helmet: a sphere built from the same half sections, so it mirrors cleanly
-    r, hx, hz = 125.0, xc - 450, 720.0
-    helmet = _loft([(hx - r * math.cos(f), r * math.sin(f), hz - r * math.sin(f),
-                     hz + r * math.sin(f), 2.0) for f in np.radians(np.linspace(12, 168, 9))],
-                   label="helmet")
+    if p.geom_level == "G1":
+        helmet = _loft(helmet_sections(p), label="helmet")
+    else:
+        # helmet: a sphere built from the same half sections, so it mirrors cleanly
+        r, hx, hz = 125.0, xc - 450, 720.0
+        helmet = _loft([(hx - r * math.cos(f), r * math.sin(f), hz - r * math.sin(f),
+                         hz + r * math.sin(f), 2.0) for f in np.radians(np.linspace(12, 168, 9))],
+                       label="helmet")
 
     # Floor body planform (App.1 §4.1/§4.9), flat bottom on Z=0 ahead of the diffuser
     xd = xr + p.diffuser_start
@@ -419,6 +436,21 @@ def body(p: CarParams):
     out = _fuse(spine, sidepods, helmet, plate, ramp, fence, *extra).intersect(above_ref)
     if p.geom_level == "G1":
         out = out.cut(airbox_mouth(p))
+    return out
+
+
+def helmet_sections(p: CarParams, n=17):
+    """G1 helmet as half superellipse sections (X, a, z0, z1, exponent) at n stations,
+    cosine-spaced so the rounded front and rear get more of them; every keyframe
+    column PCHIP-interpolated (clean-cad D1), same 13 points per section (D2)."""
+    from scipy.interpolate import PchipInterpolator
+    k = np.array(G1_HELMET)
+    f = [PchipInterpolator(k[:, 0], k[:, i]) for i in range(1, 5)]
+    hx = p.xc - 450.0
+    out = []
+    for u in -np.cos(np.linspace(0.0, np.pi, n)):
+        a, z0, z1, e = (float(fi(u)) for fi in f)
+        out.append((hx + u * G1_HELMET_LENGTH / 2, a, z0, z1, e))
     return out
 
 
