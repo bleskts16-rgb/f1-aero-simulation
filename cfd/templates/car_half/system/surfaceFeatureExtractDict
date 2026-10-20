@@ -27,5 +27,6 @@ front_wing.stl      { $_feature; }
 rear_wing.stl       { $_feature; }
 wheels_front.stl    { $_feature; }
 wheels_rear.stl     { $_feature; }
+@EXTRA_FEATURE_FILES@
 
 #remove _feature

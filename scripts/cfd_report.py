@@ -138,7 +138,8 @@ def main():
               f"not converged unless the run was long enough):")
         a = args.aref
         print("  part          CL*A [m^2]  CD*A [m^2]" + (f"   CL (A={a:g})   CD" if a else ""))
-        for k in ("front_wing", "body", "rear_wing", "wheels", "total"):
+        order = ["front_wing", "body", "rear_wing", "wheels"]
+        for k in order + sorted(set(f) - set(order) - {"total"}) + ["total"]:
             if k in f:
                 row = f"  {k:<12}{f[k]['cla']:11.3f}{f[k]['cda']:12.3f}"
                 if a:

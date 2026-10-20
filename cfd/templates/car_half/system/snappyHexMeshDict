@@ -21,6 +21,7 @@ geometry
     rear_wing.stl    { type triSurfaceMesh; name rear_wing; }
     wheels_front.stl { type triSurfaceMesh; name wheels_front; }
     wheels_rear.stl  { type triSurfaceMesh; name wheels_rear; }
+    @EXTRA_PART_GEOMETRY@
 
     wakeBox { type box; min (-2.0 0 0);  max (10.0 1.4 1.6); }    // car + near wake
     nearBox { type box; min (-1.5 0 0);  max (5.0 1.1 1.3); }     // around the car
@@ -43,6 +44,7 @@ castellatedMeshControls
         { file "rear_wing.eMesh";    level @LV_WING_MAX@; }
         { file "wheels_front.eMesh"; level @LV_WHEEL@; }
         { file "wheels_rear.eMesh";  level @LV_WHEEL@; }
+        @EXTRA_PART_FEATURES@
     );
 
     refinementSurfaces
@@ -62,6 +64,7 @@ castellatedMeshControls
             level (@LV_WHEEL@ @LV_WHEEL@);
             patchInfo { type wall; inGroups (car wheels); }
         }
+        @EXTRA_PART_SURFACES@
     }
 
     resolveFeatureAngle 30;
@@ -95,7 +98,7 @@ addLayersControls
     @LAYER_MODE@
     layers
     {
-        "(body|front_wing|rear_wing|wheels_.*)" { nSurfaceLayers @N_LAYERS@; }
+        "@LAYER_PATCHES@" { nSurfaceLayers @N_LAYERS@; }
     }
     @LAYER_SIZE@
     nGrow               0;

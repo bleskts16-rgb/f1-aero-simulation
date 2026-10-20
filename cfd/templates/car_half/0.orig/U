@@ -26,7 +26,7 @@ boundaryField
     }
     ground          { type fixedValue; value uniform (@U_INF@ 0 0); }   // moving road
     "(top|side)"    { type slip; }
-    "(body|front_wing|rear_wing)" { type noSlip; }
+    "@NOSLIP_PATCHES@" { type noSlip; }
     // tyre surface speed matches the road: omega = -U/R about +Y
     wheels_front
     {

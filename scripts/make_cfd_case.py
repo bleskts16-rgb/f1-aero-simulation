@@ -66,6 +66,40 @@ def shift_stl(src, dst, dy):
     return tri["v"].reshape(-1, 3)
 
 
+THIN_PARTS = ("halo", "mirrors", "suspension")
+
+
+def part_blocks(extra):
+    """Template text for detail parts beyond the five base parts. Wake boards are
+    multi-element aero surfaces and get the wing levels; the rest (helmet, halo,
+    suspension, mirrors) the finest body level. With no extra parts every block is
+    empty or equal to the original five-part text."""
+    base = list(PARTS)
+    lv = {n: ((REFINE["LV_WING_MIN"], REFINE["LV_WING_MAX"]) if n.startswith("wake_boards")
+              else (REFINE["LV_BODY_MAX"], REFINE["LV_BODY_MAX"])) for n in extra}
+    groups = {}
+    for n in extra:
+        groups.setdefault("suspension" if n.startswith("suspension") else n, []).append(n)
+    return dict(
+        EXTRA_PART_GEOMETRY="\n    ".join(f"{n}.stl {{ type triSurfaceMesh; name {n}; }}" for n in extra),
+        EXTRA_PART_FEATURES="\n        ".join(f'{{ file "{n}.eMesh"; level {lv[n][1]}; }}' for n in extra),
+        EXTRA_PART_SURFACES="\n        ".join(
+            f"{n}\n        {{\n            level ({lv[n][0]} {lv[n][1]});\n"
+            f"            patchInfo {{ type wall; inGroups (car details); }}\n        }}" for n in extra),
+        EXTRA_FEATURE_FILES="\n".join(f"{n}.stl {{ $_feature; }}" for n in extra),
+        EXTRA_FORCES="\n    ".join(f"forces_{g} {{ $_forces; patches ({' '.join(ps)}); }}"
+                                   for g, ps in groups.items()),
+        # thin members (55 mm halo tube, 18 mm struts, mirror stalks) get no prism layers at
+        # any level: at L1 the 3 mm stack collapsed on them, at finer levels it would not, and
+        # a near-wall treatment that changes with the level spoils a grid study (2026-10-20)
+        LAYER_PATCHES="(" + "|".join(["body", "front_wing", "rear_wing", "wheels_.*"]
+                                     + [n for n in extra if not n.startswith(THIN_PARTS)]) + ")",
+        TOTAL_PATCHES=" ".join(base + extra),
+        NOSLIP_PATCHES="(" + "|".join(["body", "front_wing", "rear_wing"] + extra) + ")",
+        PV_PARTS=", ".join(f'"{n}"' for n in base + extra),
+    )
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--geom", default="cad/out/baseline_half",
@@ -94,8 +128,10 @@ def main():
     shutil.copytree(TEMPLATE, case)
     tri = case / "constant" / "triSurface"
     tri.mkdir(parents=True)
+    # optional detail parts (G1/--details: helmet, halo, suspension, wake boards, mirrors)
+    extra = [f.stem for f in sorted(geom.glob("*.stl")) if f.stem not in PARTS]
     ymin = 0.0
-    for part in PARTS:
+    for part in PARTS + tuple(extra):
         v = shift_stl(geom / f"{part}.stl", tri / f"{part}.stl", Y_SHIFT)
         ymin = min(ymin, float(v[:, 1].min()))
     if ymin < Y_SHIFT - 0.01:
@@ -125,6 +161,7 @@ def main():
     values["LAYER_FEATURE_ANGLE"] = sch["layer_feature_angle"]
     values["MQ_RELAXED"] = sch["mq_relaxed"]
     values["LV_WHEEL"] = sch.get("lv_wheel", REFINE["LV_BODY_MIN"])
+    values.update(part_blocks(extra))
     if sch["floor_boxes"]:
         # ground frame: the floor underside sits at the front/rear ride height and the
         # diffuser rises to its exit height at XR+165 (cad/car2026.py)

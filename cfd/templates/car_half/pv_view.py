@@ -15,7 +15,7 @@ from paraview.simple import *  # noqa: F401,F403
 HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
 CASE = os.path.join(HERE, "case.foam")
 U_INF = @U_INF@
-PARTS = ("body", "front_wing", "rear_wing", "wheels_front", "wheels_rear")
+PARTS = (@PV_PARTS@)
 open(CASE, "a").close()
 
 
