@@ -4,6 +4,46 @@
 
 ---
 
+## 2026-10-20 (회사 PC)
+
+### 한 일
+1. 집 커밋 6개(`2585c7a`까지)를 받았다. 이 PC에도 pyvista를 설치했다. G1 반쪽 빌드는 QA 모든 항목 OK(약 3.5분)이고, 렌더도 동작한다.
+2. **grid2 격자 설정**(`make_cfd_case.py --scheme grid2`). grid1은 `--scheme grid1`(기본값)로 이전 케이스와 같은 사전과 STL을 다시 만든다(diff로 확인).
+   - 바닥 아래 리파인 박스(X 0.35~3.6, Y 0~0.76, Z 0~0.11 m)와 디퓨저 박스(X 2.75~3.87, Y 0~0.42, Z 0~0.31 m), 둘 다 레벨 5
+   - 프리즘 첫 층을 0.8 mm로 고정(relativeSizes false), 성장비 1.25, 3층
+   - featureAngle 130, `relaxed { maxNonOrtho 75; }`
+   - **바퀴 표면 레벨 5**: 레벨 4(L1 25 mm 셀)에서는 3 mm 층이 품질 검사에 걸려 1.0~1.4층만 생겼다. 원인은 snappy 로그로 확인했다.
+     featureAngle과 relaxed만으로는 그대로였고, 레벨 5로 올리자 2.5층/82 %가 됐다.
+3. **L1 시험**(이 PC, 4코어, 50회, 3번 반복해서 조정):
+   - 셀 93.6만(grid1 L1은 77.3만)
+   - 층: 차체 2.13층/69 %, 앞날개 2.70층, 뒷날개 2.48층, 바퀴 2.52층/82 %
+   - 평균 y+: 앞날개 47, 뒷날개 49, 차체 77, 바퀴 79~82(grid1은 차체 220, 바퀴 340)
+   - 최대 비대칭도 4.4(46면), grid1과 비슷하다. 메모리 2.2 GB, 메싱 약 9분.
+4. `grid_study.py`
+   - `prepare --scheme`을 추가했다. 노드 이름은 클러스터에 제출할 때만 필요하다.
+   - **`run-local`**: 이 PC에서 케이스를 순서대로 실행한다. 끝난 케이스는 건너뛰므로 끊겨도 같은 명령으로 재개한다.
+   - 클러스터 제출 스크립트를 **전체 합 64코어 이하의 웨이브** 방식으로 바꿨다. 사용자 규칙(노드별이 아니라 전체 합)을 따른다.
+
+### 집 PC에서 grid2 돌리는 법
+1. `git pull`, `python scripts/build_car.py --half`(G0 baseline, STL MD5는 그대로여야 함)
+2. WSL 메모리: L4(약 700만 셀)는 약 20 GB가 필요하다.
+   `%UserProfile%\.wslconfig`에 `[wsl2]`과 `memory=26GB`를 넣고 `wsl --shutdown`을 실행한다.
+3. 준비:
+   `python scripts/grid_study.py prepare grid2 --configs baseline=cad/out/baseline_half --levels L1 L2 L3 L4 --np L1=6 L2=6 L3=6 L4=6 --iter 2000 --scheme grid2`
+4. 첫날 밤: `python scripts/grid_study.py run-local grid2 --levels L1 L2 L3`
+   예상(7.1 코어·초 기준): L1 약 0.5 h, L2 약 1.4 h, L3 약 2.6 h, 합계 약 4.5 h
+5. 둘째 날 밤: `python scripts/grid_study.py run-local grid2 --levels L4` (약 5.5 h)
+6. `python scripts/grid_study.py analyze grid2`
+   - L2~L4가 단조 수렴하면 GCI가 나온다.
+   - HF 판정 기준: CL·A ±2 %, CD·A ±2.5 %
+
+### 남은 문제
+- grid2도 정상 RANS다. L4·L5에서 힘 진동이 커진 문제는 격자로 해결되지 않을 수 있다. 그 경우 비정상 해석(L3)과 비교해야 한다.
+- grid2에는 baseline만 있다. LF 기준(설계 차이 ±10 %)을 보려면 low_drag도 필요하다.
+  `--levels`에 맞춰 `prepare --add --configs low_drag=cad/out/low_drag_half`로 추가한다.
+
+---
+
 ## 2026-10-19 (집 PC)
 
 ### 한 일

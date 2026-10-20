@@ -20,7 +20,7 @@ F1 셋업 → 파라메트릭 CAD → OpenFOAM → 공력 서로게이트 → QS
 - OpenFOAM에 들어가는 파일은 LF여야 한다(`.gitattributes`가 강제). 파이썬으로 쓸 때는 `write_bytes`나 `newline="\n"`을 쓴다.
 - **무거운 해석(수백만 셀 이상)은 회사 클러스터(Slurm)에서, 가벼운 해석은 로컬에서** 한다. 집에서는 클러스터에 접근할 수 없다.
   클러스터에는 numpy가 없으므로 케이스는 로컬에서 만들어 `grid_study.py push`로 보낸다.
-  공유 노드이므로 노드당 동시 64코어 이하로 쓴다.
+  공유 노드이므로 내 잡 전체 합을 동시 64코어 이하로 쓴다(노드별이 아님).
 
 ## 규칙
 - 좌표는 FIA 규정과 같다: X 후방 +, Y 운전자 오른쪽 +, Z 위 +. CAD 원점은 앞차축, 노면은 Z = 0.
@@ -31,6 +31,8 @@ F1 셋업 → 파라메트릭 CAD → OpenFOAM → 공력 서로게이트 → QS
   직선 모드 CL·A는 랩타임에 거의 영향이 없다. 격자 연구의 HF 판정은 이 기준으로 한다.
 - CL·CD의 기준 면적은 baseline 전체 차량 정면 면적 1.474 m²(바퀴 포함, `cfd_report.py --aref`).
 - 격자 단계 L1~L5는 배경 셀 0.40 m에서 1.33배씩 줄인 계열이다(`make_cfd_case.py`의 `LEVELS`). 단계마다 다른 설정은 바꾸지 않는다.
+  격자 계열(scheme)은 `grid1`(층이 표면 셀에 비례)과 `grid2`(바닥·디퓨저 박스, 첫 층 0.8 mm 고정, 바퀴 레벨 5)가 있다. 서로 다른 scheme의 결과는 섞지 않는다.
+- 클러스터 사용은 내 잡 전체 합이 동시 64코어 이하다(노드별이 아님). `grid_study.py`의 제출 웨이브가 이를 지킨다.
 - 힘은 마지막 1000회 평균과 자기상관을 보정한 표준오차로 본다.
   Richardson 외삽·GCI는 단조 수렴이고 0.5 ≤ p ≤ 3이며 단계 간 변화가 통계 오차보다 클 때만 쓴다(`grid_study.py`가 판정).
 
@@ -65,6 +67,6 @@ python scripts/aero_sensitivity_2026.py                              # 공력 �
 python scripts/make_cfd_case.py --level L1 --np 4                    # 로컬 케이스
 python scripts/run_cfd.py cfd/runs/baseline_half_L1                  # WSL에서 메싱 + 해석
 python scripts/cfd_report.py cfd/runs/baseline_half_L1 --aref 1.474  # 시간·메모리·CL/CD
-python scripts/grid_study.py prepare|push|status|fetch|analyze <study>
+python scripts/grid_study.py prepare|push|status|fetch|run-local|analyze <study>   # --scheme grid2 = 바닥 박스 + 고정 첫 층
 python scripts/extract_ttc_reference.py                              # 참고 모델 바닥 수치표 → docs/references/
 ```

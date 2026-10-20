@@ -138,6 +138,21 @@ Reference Volume을 따라 CadQuery로 만든 파라메트릭 형상입니다.
 
 전체 표·부품별 값·층 품질은 [docs/results/grid1/grid_study.md](docs/results/grid1/grid_study.md)에 있습니다.
 
+### 격자 연구 2차 설정 (`grid2`, 2026-10-20)
+
+grid1에서 찾은 두 원인을 고친 격자 계열이다(`make_cfd_case.py --scheme grid2`). `--scheme grid1`(기본값)은 이전 케이스를 그대로 다시 만든다.
+
+| 항목 | grid1 | grid2 |
+|---|---|---|
+| 바닥 아래 틈, 디퓨저 | 표면 레벨에만 의존 | 리파인 박스 2개, 레벨 5 (L1 12.5 mm → L5 4 mm) |
+| 프리즘 층 | 표면 셀에 비례 (y+가 단계마다 바뀜) | 첫 층 0.8 mm 고정, 성장비 1.25, 3층 (y+ 약 50~80) |
+| 바퀴 표면 레벨 | 4 | 5 (레벨 4에서는 층이 1~1.4층만 생김) |
+| 층 처리 | featureAngle 60 | featureAngle 130, 층 추가 시 비직교 75까지 허용 |
+
+L1 시험(이 PC, 50회): 셀 93.6만, 층 차체 2.1층·날개 2.5~2.7층·바퀴 2.5층, 평균 y+ 날개 47~49·차체 77·바퀴 80, 메모리 2.2 GB.
+HF 판정 기준은 [공력 민감도](docs/results/aero_sensitivity_2026.md)에서 정한 CL·A ±2 %, CD·A ±2.5 %다.
+
+
 ## 사용법
 
 ```bash
@@ -171,6 +186,10 @@ python scripts/grid_study.py push grid1        # 전송 + 제출 (prepare --add 
 python scripts/grid_study.py status grid1
 python scripts/grid_study.py fetch grid1       # 로그와 힘 데이터만 회수
 python scripts/grid_study.py analyze grid1     # GCI, 외삽, 설계 차이(경향) 비교
+
+# 클러스터 없이 이 PC에서 순서대로 실행 (grid2 예)
+python scripts/grid_study.py prepare grid2 --configs baseline=cad/out/baseline_half --levels L1 L2 L3 L4 --np L1=6 L2=6 L3=6 L4=6 --iter 2000 --scheme grid2
+python scripts/grid_study.py run-local grid2 --levels L1 L2 L3   # 끝난 케이스는 건너뜀, 끊겨도 같은 명령으로 재개
 ```
 
 ## 구조

@@ -25,6 +25,7 @@ geometry
     wakeBox { type box; min (-2.0 0 0);  max (10.0 1.4 1.6); }    // car + near wake
     nearBox { type box; min (-1.5 0 0);  max (5.0 1.1 1.3); }     // around the car
     wingBox { type box; min (-1.35 0 0); max (-0.35 0.75 0.45); } // front-wing slots
+    @EXTRA_GEOMETRY@
 }
 
 castellatedMeshControls
@@ -40,8 +41,8 @@ castellatedMeshControls
         { file "body.eMesh";         level @LV_BODY_MAX@; }
         { file "front_wing.eMesh";   level @LV_WING_MAX@; }
         { file "rear_wing.eMesh";    level @LV_WING_MAX@; }
-        { file "wheels_front.eMesh"; level @LV_BODY_MIN@; }
-        { file "wheels_rear.eMesh";  level @LV_BODY_MIN@; }
+        { file "wheels_front.eMesh"; level @LV_WHEEL@; }
+        { file "wheels_rear.eMesh";  level @LV_WHEEL@; }
     );
 
     refinementSurfaces
@@ -58,7 +59,7 @@ castellatedMeshControls
         }
         "wheels_.*"
         {
-            level (@LV_BODY_MIN@ @LV_BODY_MIN@);
+            level (@LV_WHEEL@ @LV_WHEEL@);
             patchInfo { type wall; inGroups (car wheels); }
         }
     }
@@ -70,6 +71,7 @@ castellatedMeshControls
         wakeBox { mode inside; levels ((1E15 @LV_WAKE@)); }
         nearBox { mode inside; levels ((1E15 @LV_NEAR@)); }
         wingBox { mode inside; levels ((1E15 @LV_WINGBOX@)); }
+        @EXTRA_REGIONS@
     }
 
     locationInMesh (-4.9871 2.5137 2.5311);
@@ -90,16 +92,14 @@ snapControls
 
 addLayersControls
 {
-    relativeSizes       true;
+    @LAYER_MODE@
     layers
     {
         "(body|front_wing|rear_wing|wheels_.*)" { nSurfaceLayers @N_LAYERS@; }
     }
-    expansionRatio      1.2;
-    finalLayerThickness 0.5;
-    minThickness        0.1;
+    @LAYER_SIZE@
     nGrow               0;
-    featureAngle        60;
+    featureAngle        @LAYER_FEATURE_ANGLE@;
     slipFeatureAngle    30;
     nRelaxIter          3;
     nSmoothSurfaceNormals 1;
@@ -115,6 +115,7 @@ addLayersControls
 meshQualityControls
 {
     #include "meshQualityDict"
+    @MQ_RELAXED@
     nSmoothScale    4;
     errorReduction  0.75;
 }
