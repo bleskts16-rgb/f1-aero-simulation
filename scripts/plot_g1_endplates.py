@@ -4,7 +4,7 @@
 Output: docs/figures/g1_endplates_2d.png
 
 Rear: side view (X-Z) with the rear tyre and the diffuser, and rear view (Y-Z) of
-how the endplate turns inboard into the diffuser outer wall.
+how the lower endplate folds inboard along the RV-RWEP-BODY band (§26).
 Front: endplate side outline with the wheel-clearance cut, and the footplate J section.
 """
 import sys
@@ -42,13 +42,14 @@ def main():
         r = np.array(ring)
         a.plot([r[:, 0].min(), r[:, 0].max()], [z, z], color=red, lw=1)
     a.plot([], [], color=red, label="lower endplate sections (loft)")
-    lk = np.array(c._rounded_outline([(xr + dx, z, rr) for dx, z, rr in c.G1_RW_DIFF_LINK]))
-    a.fill(lk[:, 0], lk[:, 1], color=green, alpha=0.3, lw=0)
-    a.plot(lk[:, 0], lk[:, 1], color=green, lw=1, label="diffuser wall extension")
+    py = np.array(c._rounded_outline(c.G1_RW_PYLON))
+    a.fill(xr + py[:, 0], py[:, 1], color=green, alpha=0.3, lw=0)
+    a.plot(xr + py[:, 0], py[:, 1], color=green, lw=1, label="twin pylon (Y 28..43)")
     a.plot(xr + R * np.cos(th), rz + R * np.sin(th), color=grey, lw=1, ls="--", label="rear tyre")
-    xd = xr + p.diffuser_start
-    a.plot([xd, xr + 165, xr + 165], [p.floor_thickness, p.diffuser_exit_height + p.floor_thickness, 0],
-           color="k", lw=0.8, label="diffuser ramp / exit")
+    roof = np.array([(xr + x, z + 1) for x, z in c.G1_DIFF_ROOF])
+    a.plot(roof[:, 0], roof[:, 1], color="k", lw=0.8, label="diffuser roof underside (tunnel roof)")
+    sh = np.array([(xr + x, z + 1) for x, z in c.G1_DIFF_SHEET])
+    a.plot(sh[:, 0], sh[:, 1], color="k", lw=0.8, ls="--", label="diffuser fence lower edge")
     rs = np.array(c.RS_RWEP + (c.RS_RWEP[0],))
     a.plot(xr + rs[:, 0], rs[:, 1], color="k", ls=":", lw=1.2, label="RS-RWEP (must be covered)")
     a.set_title("rear, side view (car frame)")
@@ -59,11 +60,15 @@ def main():
     z = np.array([q[0] for q in secs])
     yc = np.array([np.mean(np.array(r)[:, 1]) for _, r in secs])
     h = c.G1_RW_EP_THICK / 2
+    band = np.array([(350, 250), (350, 425), (540, 700), (540, 880), (575, 880), (575, 675),
+                     (375, 375), (375, 250), (350, 250)])
+    a.plot(band[:, 0], band[:, 1], color="k", ls=":", lw=1.2, label="RV-RWEP-BODY section (§26.1)")
     a.fill_betweenx(z, yc - h, yc + h, color=red, alpha=0.5, lw=0, label="lower endplate")
-    a.fill_between([s - 7, s + 8], [470, 470], [878, 878], color=navy, alpha=0.3, lw=0, label="endplate beside wing")
-    y0, y1 = c.G1_RW_DIFF_LINK_Y
-    a.fill_between([y0, y1], [40, 40], [232, 232], color=green, alpha=0.35, lw=0, label="diffuser wall extension")
-    a.fill_between([375, 390], [0, 0], [190, 190], color="k", alpha=0.25, lw=0, label="diffuser fence (body)")
+    uy0, uy1 = c.G1_RW_EP_UPPER_Y
+    a.fill_between([uy0, uy1], [712, 712], [878, 878], color=navy, alpha=0.3, lw=0, label="endplate beside wing")
+    fy0, fy1 = c.G1_DIFF_FENCE_Y
+    a.fill_between([fy0, fy1], [101, 101], [174, 174], color="k", alpha=0.25, lw=0,
+                   label="diffuser fence at the exit (body)")
     a.axvline(p.half_width - p.tyre_r_width, color=grey, ls="--", lw=1, label="rear tyre inner face")
     a.plot(yc, z, ".", color=red, ms=3)
     a.set_title("rear, view from behind (Y >= 0)")

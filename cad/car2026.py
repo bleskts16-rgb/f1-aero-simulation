@@ -17,6 +17,8 @@ import math
 
 import cadquery as cq
 import numpy as np
+
+from cad import regvol
 from OCP.Approx import Approx_ChordLength, Approx_Centripetal, Approx_IsoParametric
 from OCP.BRepOffsetAPI import BRepOffsetAPI_ThruSections
 
@@ -71,7 +73,6 @@ class CarParams:
     # (formula1.com, "Explained: 2026 aerodynamic regulations"): spoon-shaped front
     # wing with tall endplates, sidepods with a deep undercut and a downwash top.
     geom_level: str = "G0"
-    fw_tip_rise: float = 80.0                # G1: front wing tips raised by this [mm]
     # G1 wheels (clean-cad T1): tyre cross-section revolved about the axle, on an
     # 18" rim (462.6 mm, Art. 10.7.2) with dished wheel covers. One closed solid per
     # wheel, so it stays a single rotating wall in CFD.
@@ -130,41 +131,63 @@ class CarParams:
 # Rear-wing endplate must obscure RS-RWEP when seen from the side (App.1 RS #12):
 RS_RWEP = ((310, 870), (740, 870), (740, 700), (630, 350), (400, 275), (230, 700),
            (245, 800))                                          # [XR, Z]
-# Part beside the wing: side outline (dX from XR, Z, corner radius). Straight runs +
-# tangent arcs never leave the hull of these vertices (a periodic spline overshot
-# the 880 mm limit by 38 mm). Flat lower edge at Z 460 over X 322..672, so the lower
-# endplate's first station (Z 470, same X ends) sits inside it (J1, no step).
-G1_RW_EP_UPPER = ((225.0, 878.0, 40.0), (745.0, 878.0, 20.0), (745.0, 690.0, 30.0),
-                  (672.0, 460.0, 0.0), (322.0, 460.0, 0.0), (222.0, 700.0, 30.0))
-# Lower part, after 2026 cars (Ferrari SF-26 flow-vis): runs down behind the rear
-# tyre and turns inboard into the diffuser outer wall. Horizontal stadium sections
-# (15 mm thick, bull-nosed ends) through these keyframes, PCHIP between; the X ends
-# follow the RS-RWEP edges [400,275]-[230,700] and [630,350]-[740,700].
+# Part beside the wing: side outline (dX from XR, Z, corner radius), Y 545..560.
+# RV-RWEP-BODY (App.1 §26) allows Y 540..575 only above Z ~700, so this part stays
+# above Z 712; the lower endplate (below) overlaps its bottom edge (J1, no step).
+G1_RW_EP_UPPER = ((228.0, 878.0, 40.0), (745.0, 878.0, 20.0), (745.0, 712.0, 15.0),
+                  (228.0, 712.0, 10.0))         # front >= XR 225 (§26.2)
+G1_RW_EP_UPPER_Y = (545.0, 560.0)
+# Lower part: follows the RV-RWEP-BODY band, which leans inboard from Y 540..575 at
+# Z 700 to Y 350..375 below Z 375 (2026 endplates fold in under the wing). Horizontal
+# stadium sections (15 mm thick, bull-nosed ends) through these keyframes, PCHIP
+# between. Y centre = middle of the band; the X ends lie between the RS-RWEP edges
+# ([400,275]-[230,700] front, [630,350]-[740,700] rear, which must be covered from the
+# side) and the §26.3 trimming planes (front, rear, bottom).
 #   (Z car frame, X front from XR, X rear from XR, Y centre)
-G1_RW_EP_LOWER = ((470.0, 320.0, 672.0, 552.5), (420.0, 340.0, 655.0, 549.0),
-                  (380.0, 356.0, 645.0, 538.0), (350.0, 368.0, 636.0, 522.0),
-                  (330.0, 376.0, 600.0, 505.0),
-                  (280.0, 390.0, 560.0, 458.0), (230.0, 395.0, 545.0, 422.0),
-                  (180.0, 380.0, 540.0, 395.0))
+# (X ends ~35 % into the allowed window; top rows kept inside the upper part's outline
+# and under the XR 750 limit; bottom rows long enough that the loft does not bulge)
+G1_RW_EP_LOWER = ((715.0, 228.5, 743.0, 552.5), (690.0, 229.0, 742.0, 554.0),
+                  (660.0, 237.3, 739.4, 538.7), (620.0, 253.0, 726.6, 511.5),
+                  (570.0, 272.6, 710.5, 477.6), (520.0, 292.1, 694.5, 443.7),
+                  (470.0, 311.7, 678.4, 409.7), (420.0, 331.2, 662.4, 377.5),
+                  (380.0, 346.9, 649.5, 364.2), (340.0, 362.5, 618.8, 362.5),
+                  (300.0, 378.2, 560.0, 362.5), (272.0, 389.1, 520.0, 362.5))
 G1_RW_EP_THICK = 15.0
-# Diffuser outer-wall extension tying the endplate foot to the diffuser exit,
-# side outline (dX from XR, Z, corner radius), Y 382..398 (overlaps the fence 375..390)
-G1_RW_DIFF_LINK = ((100.0, 40.0, 0.0), (100.0, 195.0, 10.0), (420.0, 232.0, 40.0),
-                   (570.0, 200.0, 20.0), (570.0, 160.0, 20.0), (380.0, 120.0, 40.0))
-G1_RW_DIFF_LINK_Y = (382.0, 398.0)
+# Twin pylons in RV-RW-PYLON (App.1 §27: Y 25..80, not on the centreline), side
+# outline (dX from XR, Z, corner radius), from the tail up into the main plane.
+G1_RW_PYLON = ((215.0, 305.0, 0.0), (262.0, 718.0, 12.0), (365.0, 718.0, 12.0),
+               (365.0, 305.0, 0.0))
+G1_RW_PYLON_Y = (28.0, 43.0)
+# Wing elements along the span (clean-cad W1), fitted inside RV-RW-PROFILES (§25):
+# the lower limit rises from Z 700 (Y <= 100) to Z 750 (Y 575), the top is Z 880, so
+# the stack rises and flattens outboard. (Y, chord scale, main, flap 1, flap 2 angle
+# [deg], main LE Z); 2D margins 4..9 mm, also with the flaps at -25 deg (X-mode).
+G1_RW_SPAN = ((0.0, 1.00, 2.0, 22.0, 45.0, 729.3), (200.0, 1.00, 2.0, 21.0, 42.0, 736.9),
+              (400.0, 0.92, 3.0, 19.0, 37.0, 753.1), (552.0, 0.86, 3.0, 17.0, 33.0, 767.2))
+G1_RW_STATIONS = 9
 
 # Front wing (all [XF, ...]). Everything lies aft of RS-FW-SECTION (§17), the
 # vertical plane through [-1250, 100] and [-975, 700]: X >= fw_section_x(Y).
 RS_FW_SECTION = ((-1250.0, 100.0), (-975.0, 700.0))           # [XF, Y]
 FW_SECTION_MARGIN = 3.0
 FW_SPAN_G1 = 670.0                    # profiles half span, RV-FW-PROFILES reaches Y 675
+# Profiles along the span (clean-cad W1), fitted inside RV-FW-PROFILES (App.1 §18):
+# at the centre the volume is only Z 60..125 high and ends at XF -750, so the stack
+# is short and flat there; outboard it grows, twists up and rises with the volume's
+# floor (Z 60 -> 150 at Y 675, and the §18.5 plane rising rearwards), then tapers at
+# the tip. (Y, chord scale, main, flap 1, flap 2 angle [deg], main LE Z); the LE X
+# follows `fw_sweep`. 2D margins >= 2 mm (tightest at the centre top/bottom).
+G1_FW_SPAN = ((0.0, 0.64, -2.0, 1.0, 4.0, 84.1), (150.0, 0.76, 0.0, 7.0, 14.0, 99.9),
+              (300.0, 0.86, 2.0, 11.0, 20.0, 123.8), (450.0, 0.84, 3.0, 12.0, 21.0, 150.7),
+              (560.0, 0.72, 2.0, 10.0, 18.0, 169.9), (670.0, 0.62, 2.0, 10.0, 18.0, 181.7))
+G1_FW_STATIONS = 13
 # Endplate = body + inboard footplate + outboard footplate + fence (Art. 3.10.6).
 # Body: Y 662..678 in RV-FWEP-BODY (Y 600..680, Z 50..375, top trimmed by the plane
 # through [-1050, 225] and [-675, 375]); side outline (XF, Z, corner radius), then
 # trimmed by the D825 wheel cylinder at [XF, Z] = [0, 360] (§19.3).
 G1_FW_EP_BODY_Y = (662.0, 678.0)
 G1_FW_EP_BODY = ((-980.0, 52.0, 0.0), (-980.0, 250.0, 25.0), (-675.0, 372.0, 60.0),
-                 (-290.0, 372.0, 0.0), (-290.0, 52.0, 0.0))
+                 (-301.0, 372.0, 0.0), (-301.0, 52.0, 0.0))        # rear limit XF -300 (§19.1)
 # Footplates, plan view; the front edge follows RS-FW-SECTION, the rear is trimmed by
 # the wheel cylinder. Inboard: RV-FWEP-IFP Y 600..750, Z 50..85. Outboard: RV-FWEP-OFP
 # Y 750..900, Z 50..140 (the tip that sticks out ahead of the front tyre).
@@ -230,6 +253,48 @@ G1_BODY_N_RUN, G1_BODY_N_ARC = 6, 6
 # with a 19.9 mm tail bulge, uniform 41 still self-intersected, cosine 25 was
 # clean with 10.3 mm, cosine 33 clean with 1.1 mm.
 G1_BODY_STATIONS = 33
+
+
+# Floor (App.1 §4). RV-FLOOR-BODY has a low part (Z >= 0) only inside the §4.1
+# planform and an upper part starting at Z 50 out to Y 725 (§4.9), so the G1 floor
+# is flat on Z = 0 inside the §4.1 edge, steps up along it with a wall, and the outer
+# floor runs at Z 50. Behind the kick-up the diffuser roof follows the §4.20 tunnel
+# roof and a fence stands outside the tunnel (Y > 345) above the §4.23 sheet.
+# Points (X, Y, anchor): anchor F = from the front axle, R = from the rear axle.
+G1_FLOOR_LOW_EDGE = ((350.0, 25.0, "F"), (1400.0, 390.0, "F"), (-1050.0, 390.0, "R"),
+                     (-775.0, 350.0, "R"), (-475.0, 240.0, "R"), (165.0, 100.0, "R"))   # §4.1
+G1_FLOOR_UPPER = ((525.0, 0.0, "F"), (1200.0, 725.0, "F"), (-350.0, 725.0, "R"),
+                  (-350.0, 390.0, "R"), (165.0, 365.0, "R"), (165.0, 0.0, "R"))       # §4.9
+G1_FLOOR_EDGE_PLANE = ((1650.0, 250.0, 0.0), (850.0, 250.0, 0.0), (1650.0, 375.0, 10.0))  # §4.3
+G1_FLOOR_FRONT = 430.0          # XF of the flat bottom's front edge (§4.8 trims at ~XF 425)
+G1_FLOOR_MARGIN = 3.0           # inside every limit
+G1_FLOOR_STEP_Z = 50.0          # outer floor underside
+G1_FLOOR_WALL = 10.0            # step wall thickness, inside the §4.1 edge
+G1_FLOOR_WALL_START = 640.0     # XF where the upper planform first reaches past the §4.1 edge
+G1_FLOOR_KICK = (-700.0, -600.0)                       # XR: flat bottom -> diffuser roof
+G1_DIFF_ROOF = ((-600.0, 50.0), (-450.0, 50.0), (165.0, 165.0))  # [XR, Z] underside (§4.20)
+G1_DIFF_SHEET = ((-400.0, 50.0), (-325.0, 50.0), (-175.0, 100.0), (165.0, 100.0))  # §4.23
+G1_DIFF_FENCE_Y = (347.0, 362.0)
+
+# Floor boards (the G1 "wake boards"): RV-FLOOR-BOARD (§6) is a band at Y 600..875 that
+# leans inboard rearwards, Z 70 up to the §6.3 plane; the vanes stand on a foot plate
+# in RV-FLOOR-FOOT (§5, Z 50..100) that overlaps the outer floor. Slots between the
+# vanes run parallel to the sloping top.
+G1_WB_LE = (760.0, 805.0)                    # leading edge [XF, Y], middle of the band
+G1_WB_YAW = 13.0                             # inward alignment of the band [deg]
+G1_WB_TOP = ((800.0, 375.0), (1500.0, 200.0))       # §6.3 top plane [XF, Z]; Z <= 375
+G1_WB_TOP_MARGIN = 3.0
+G1_WB_FOOT = ((656.0, 656.0), (656.0, 869.0), (724.0, 869.0), (1291.0, 708.0),
+              (1109.0, 483.0), (1001.0, 606.0))     # §5.1 outline, inset ~5 mm [XF, Y]
+G1_WB_FOOT_Z = (52.0, 70.0)
+
+# Mirrors: housing inside RV-MIRROR-BODY (§10: Z 640..720, a parallelogram whose long
+# side leans 20.9 deg off Y), stalk inside RV-MIRROR-ISTAY (§31 row 2: XC -830..-730,
+# Y 175..470, Z 600..665). Housing = ellipsoid aligned with the parallelogram.
+G1_MIRROR_CENTRE = (1090.0, 575.0, 680.0)           # [X, Y, Z] = parallelogram centre
+G1_MIRROR_AXES = (90.0, 40.0, 28.0)                 # along the long side, across, Z
+G1_MIRROR_LEAN = math.atan2(80.0, 210.0)            # long side direction from Y [rad]
+G1_MIRROR_STALK = ((1050.0, 150.0, 605.0), (1075.0, 545.0, 668.0))   # chassis -> inside housing
 
 
 def fw_section_x(y):
@@ -564,6 +629,23 @@ def body(p: CarParams):
                           hz + r * math.sin(f), 2.0) for f in np.radians(np.linspace(12, 168, 9))],
                         label="helmet")]
 
+    extra = []
+    if p.geom_level == "G1":
+        extra.append(airbox(p))
+    # nothing of the sprung body may hang below Z=0 (2.7a); also trims loft overshoot
+    above_ref = _box(-2000, 6000, 0, 1000, 0, 1500)
+    out = _fuse(spine, sidepods, *helmet, *floor_parts(p), *extra).intersect(above_ref)
+    if p.geom_level == "G1":
+        out = out.cut(airbox_mouth(p))
+    return out
+
+
+def floor_parts(p: CarParams):
+    """Floor plate, diffuser ramp and diffuser side fence that `body` fuses in; kept
+    apart so the floor can be checked against RV-FLOOR-* (cad/regvol.py)."""
+    if p.geom_level != "G0":
+        return floor_parts_g1(p)
+    xr = p.xr
     # Floor body planform (App.1 §4.1/§4.9), flat bottom on Z=0 ahead of the diffuser
     xd = xr + p.diffuser_start
     t = p.floor_thickness
@@ -574,15 +656,60 @@ def body(p: CarParams):
     h = p.diffuser_exit_height
     ramp = _extrude_xz([(xd, 0), (xr + 165, h), (xr + 165, h + t), (xd, t)], 0, 390)
     fence = _extrude_xz([(xd, 0), (xr + 165, 0), (xr + 165, h + t), (xd, t)], 375, 390)
-    extra = []
-    if p.geom_level == "G1":
-        extra.append(airbox(p))
-    # nothing of the sprung body may hang below Z=0 (2.7a); also trims loft overshoot
-    above_ref = _box(-2000, 6000, 0, 1000, 0, 1500)
-    out = _fuse(spine, sidepods, *helmet, plate, ramp, fence, *extra).intersect(above_ref)
-    if p.geom_level == "G1":
-        out = out.cut(airbox_mouth(p))
-    return out
+    return [plate, ramp, fence]
+
+
+def _floor_x(p, x, anchor):
+    return x + (p.xr if anchor == "R" else 0.0)
+
+
+def floor_parts_g1(p: CarParams):
+    """G1 floor inside RV-FLOOR-BODY (see the G1_FLOOR_* table): flat bottom, step wall,
+    outer floor at Z 50, kick-up, diffuser roof on the tunnel roof line, fence."""
+    xr, t, m, w = p.xr, p.floor_thickness, G1_FLOOR_MARGIN, G1_FLOOR_WALL
+    R = lambda x: xr + x
+    ex = [_floor_x(p, x, a) for x, _, a in G1_FLOOR_LOW_EDGE]
+    ey = [y - m for _, y, _ in G1_FLOOR_LOW_EDGE]
+    edge = lambda x: float(np.interp(x, ex, ey))          # §4.1 edge, minus the margin
+    xk0, xk1 = R(G1_FLOOR_KICK[0]), R(G1_FLOOR_KICK[1])
+
+    def along(x0, x1, dy=0.0):
+        """Edge polyline from x0 to x1 (its own vertices in between), shifted by dy."""
+        xs = [x0] + [x for x in ex if x0 < x < x1] + [x1]
+        return [(x, edge(x) + dy) for x in xs]
+
+    # the low part's outer edge rises above Y 250 (§4.3): trim everything below it
+    lift = regvol.half_space(*G1_FLOOR_EDGE_PLANE, keep=(0, 0, 1))
+    flat = _extrude_xy([(G1_FLOOR_FRONT, 0)] + along(G1_FLOOR_FRONT, xk0) + [(xk0, 0)], 0, t)
+    band = along(G1_FLOOR_WALL_START, xk1)
+    wall = _extrude_xy(band + [(x, y - w) for x, y in reversed(band)], 0, G1_FLOOR_STEP_Z + t)
+    # kick-up: a ramp profile cut to the planform under the edge
+    kick = _extrude_xz([(xk0 - 1, 0), (xk1, G1_FLOOR_STEP_Z), (xk1, G1_FLOOR_STEP_Z + t),
+                        (xk0 - 1, t)], 0, 800)
+    kick = kick.intersect(_extrude_xy([(xk0 - 1, 0)] + along(xk0 - 1, xk1) + [(xk1, 0)], -1, 200))
+    low = _fuse(flat, wall, kick).intersect(lift)
+
+    # outer floor at Z 50: upper planform minus what lies inside the wall's inner face
+    up = [(_floor_x(p, x, a), y) for x, y, a in G1_FLOOR_UPPER]
+    up_front = _extrude_xy(up, G1_FLOOR_STEP_Z, G1_FLOOR_STEP_Z + t).intersect(
+        _box(0, xk1, 0, 1000, 0, 200))
+    core = _extrude_xy([(0, -10)] + along(0, xk1, -w / 2) + [(xk1, -10)], 0, 200)
+    outer = up_front.cut(core)
+    yu = up[2][1] - m                                       # 725 - margin, out to XR -350
+    outer_rear = _extrude_xy([(xk1, 380), (xk1, yu), (up[2][0], yu), (up[3][0], 380)],
+                             G1_FLOOR_STEP_Z, G1_FLOOR_STEP_Z + t)
+
+    # diffuser roof: underside on the tunnel roof (+1 mm), cut to the upper planform
+    under = [(R(x), z + 1.0) for x, z in G1_DIFF_ROOF]
+    roof = _extrude_xz(under + [(x, z + t) for x, z in reversed(under)], 0, 800)
+    roof = roof.intersect(_extrude_xy([(xk1, 0), (xk1, 390 - m), (R(-350), 390 - m),
+                                       (R(165), 365 - m), (R(165), 0)], 0, 400))
+    # fence outside the tunnel: from the §4.23 sheet (+1 mm) up into the roof
+    roof_z = lambda x: float(np.interp(x, [q[0] for q in under], [q[1] for q in under]))
+    sheet = [(R(x), z + 1.0) for x, z in G1_DIFF_SHEET]
+    fence = _extrude_xz(sheet + [(x, roof_z(x) + 8.0) for x, _ in reversed(sheet)],
+                        *G1_DIFF_FENCE_Y)
+    return [low, outer, outer_rear, roof, fence]
 
 
 def helmet(p: CarParams):
@@ -631,22 +758,48 @@ def fw_sweep(p: CarParams, y, soft=10.0):
     return soft * math.log1p(math.exp(need / soft))
 
 
-def _spoon_element(x, z, c, ang, span, rise, n=9, sweep=None):
-    """Wing element lofted through Y stations whose sections are lifted by
-    rise * (y / span)^2.5: flat in the middle, curling up into the endplate, and
-    moved back by sweep(y). Every element at a station moves by the same amount,
-    so slot gaps stay as set."""
-    sweep = sweep or (lambda y: 0.0)
-    wires = [_wing_section(x + sweep(y), z + rise * (y / span) ** 2.5, c, ang, y)[0]
-             for y in np.linspace(0.0, span, n)]
-    ts = BRepOffsetAPI_ThruSections(True, False, 1e-6)
-    ts.SetParType(Approx_Centripetal)
-    for w in wires:
-        ts.AddWire(w.wrapped)
-    ts.Build()
-    solid = cq.Solid(ts.Shape())
-    LOFT_LOG.append((f"fw element c={c:.0f}", solid, wires))
-    return solid
+def span_layouts(table, chords, le_x, span, n, gap, overlap, flap_delta):
+    """[(y, [(le_x, le_z, chord, angle) per element])] at n cosine-spaced span stations
+    (denser at the root and the tip, clean-cad W1). `table` rows are (Y, chord scale,
+    main, flap 1, flap 2 angle, main LE Z), PCHIP-interpolated; `le_x(y)` gives the
+    main-plane LE X. Each station is laid out by `_wing_layout`, so every station has
+    the set slot gap."""
+    from scipy.interpolate import PchipInterpolator
+    k = np.array(table, dtype=float)
+    f = [PchipInterpolator(k[:, 0], k[:, i]) for i in range(1, 6)]
+    out = []
+    for y in span / 2 * (1 - np.cos(np.linspace(0.0, np.pi, n))):
+        sc, a0, a1, a2, zle = (float(fi(y)) for fi in f)
+        _, lay = _wing_layout((le_x(y), zle), [c * sc for c in chords], (a0, a1, a2),
+                              y, y + 1.0, gap, overlap, flap_delta)
+        out.append((float(y), lay))
+    return out
+
+
+def _span_elements(layouts, label):
+    """One loft per element through its sections at every station of `layouts`."""
+    elems = []
+    for i in range(len(layouts[0][1])):
+        wires = [_wing_section(*lay[i], y)[0] for y, lay in layouts]
+        ts = BRepOffsetAPI_ThruSections(True, False, 1e-6)
+        ts.SetParType(Approx_Centripetal)
+        for w in wires:
+            ts.AddWire(w.wrapped)
+        ts.Build()
+        solid = cq.Solid(ts.Shape())
+        LOFT_LOG.append((f"{label} element {i}", solid, wires))
+        elems.append(solid)
+    return elems
+
+
+def fw_span_layouts(p: CarParams):
+    return span_layouts(G1_FW_SPAN, p.fw_chords, lambda y: p.fw_le[0] + fw_sweep(p, y),
+                        FW_SPAN_G1, G1_FW_STATIONS, p.fw_gap, p.fw_overlap, p.fw_flap_delta)
+
+
+def rw_span_layouts(p: CarParams):
+    return span_layouts(G1_RW_SPAN, p.rw_chords, lambda y: p.xr + p.rw_le[0],
+                        p.rw_span_half, G1_RW_STATIONS, p.rw_gap, p.rw_overlap, p.rw_flap_delta)
 
 
 def _wheel_cut():
@@ -676,15 +829,13 @@ def fw_footplate_outline(y0, y1):
 
 
 def front_wing_g1(p: CarParams):
-    """G1 front wing after the FIA 2026 concept and Art. 3.10: three spoon-shaped
-    profiles swept back along RS-FW-SECTION out to Y 670, and the four-part endplate
-    of Art. 3.10.6 - body, inboard footplate, outboard footplate (the tip that sticks
-    out ahead of the tyre, to Y 900) and fence - all trimmed by the wheel cylinder."""
-    s = FW_SPAN_G1
-    _, layout = _wing_layout(p.fw_le, p.fw_chords, p.fw_angles, 0, s,
-                             p.fw_gap, p.fw_overlap, p.fw_flap_delta)
-    sweep = lambda y: fw_sweep(p, y)
-    elems = [_spoon_element(x, z, c, a, s, p.fw_tip_rise, sweep=sweep) for x, z, c, a in layout]
+    """G1 front wing after the FIA 2026 concept and Art. 3.10: three profiles lofted
+    through the G1_FW_SPAN table inside RV-FW-PROFILES (low and flat at the centre,
+    rising and twisting outboard into the endplate), swept back along RS-FW-SECTION
+    out to Y 670, and the four-part endplate of Art. 3.10.6 - body, inboard footplate,
+    outboard footplate (the tip that sticks out ahead of the tyre, to Y 900) and
+    fence - all trimmed by the wheel cylinder."""
+    elems = _span_elements(fw_span_layouts(p), "fw")
 
     body = _extrude_xz(_rounded_outline(G1_FW_EP_BODY), *G1_FW_EP_BODY_Y)
     ifp = _extrude_xy(fw_footplate_outline(*G1_FW_IFP[:2]), *G1_FW_IFP[2:])
@@ -694,8 +845,9 @@ def front_wing_g1(p: CarParams):
     return _fuse(*elems, endplate)
 
 
-def rw_endplate_sections(p: CarParams, n=13):
-    # n chosen by sweep (clean-cad D5): loft escape 13.4 mm at n=9, 0.7 mm at n=13
+def rw_endplate_sections(p: CarParams, n=17):
+    # n: first G1 (Z 470..180) swept 9 -> 13.4 mm loft escape, 13 -> 0.7 mm; the
+    # 2026-10-21 endplate spans Z 715..272, so 17 keeps a similar spacing
     """(z, outline points) of the G1 lower rear endplate: stadium sections with the
     same point count at every station (clean-cad D2), keyframes PCHIP-interpolated
     (D1). Returned top to bottom."""
@@ -726,29 +878,33 @@ def rw_endplate_lower(p: CarParams):
     return solid
 
 
-def rw_diffuser_link(p: CarParams):
-    """G1 diffuser outer-wall extension from the diffuser exit to the endplate foot."""
-    y0, y1 = G1_RW_DIFF_LINK_Y
-    outline = _rounded_outline([(p.xr + dx, z, r) for dx, z, r in G1_RW_DIFF_LINK])
-    return _extrude_xz(outline, y0, y1)
-
-
 def rear_wing(p: CarParams):
+    if p.geom_level != "G0":
+        return rear_wing_g1(p)
     s = p.rw_span_half
     x0, z0 = p.xr + p.rw_le[0], p.rw_le[1]
     elems = _wing_stack((x0, z0), p.rw_chords, p.rw_angles, 0, s,
                         p.rw_gap, p.rw_overlap, p.rw_flap_delta)
     # Endplate in RV-RWEP-BODY (App.1 §26, upper part only), Y 540..575
-    extra = []
-    if p.geom_level == "G1":
-        extra = [rw_endplate_lower(p), rw_diffuser_link(p)]
-        outline = _rounded_outline(G1_RW_EP_UPPER)
-        plate = _extrude_xz([(p.xr + dx, z) for dx, z in outline], s - 7, s + 8)
-    else:
-        plate = _box(p.xr + 225, p.xr + 650, s - 7, s + 8, 690, 878)
+    plate = _box(p.xr + 225, p.xr + 650, s - 7, s + 8, 690, 878)
     # Central pylon, |Y| < 12.5 (3.11.4), from tail up to the main plane
     pylon = _box(p.xr + 240, p.xr + 380, 0, 10, 270, z0 + 20)
-    return _fuse(*elems, plate, pylon, *extra)
+    return _fuse(*elems, plate, pylon)
+
+
+def rear_wing_g1(p: CarParams):
+    """G1 rear wing inside RV-RW-PROFILES / RWEP-BODY / RW-PYLON (App.1 §25-27): three
+    elements lofted through G1_RW_SPAN (rising and flattening outboard), the endplate
+    beside the wing, the lower endplate folding inboard along the §26 band, and twin
+    pylons at Y 28..43. (The diffuser wall extension of the first G1 was dropped on
+    2026-10-21: it lay where only the FIA CAD volume RV-DIFF applies, so it could not
+    be shown legal.)"""
+    elems = _span_elements(rw_span_layouts(p), "rw")
+    plate = _extrude_xz([(p.xr + dx, z) for dx, z in _rounded_outline(G1_RW_EP_UPPER)],
+                        *G1_RW_EP_UPPER_Y)
+    pylon = _extrude_xz([(p.xr + dx, z) for dx, z in _rounded_outline(G1_RW_PYLON)],
+                        *G1_RW_PYLON_Y)
+    return _fuse(*elems, plate, rw_endplate_lower(p), pylon)
 
 
 def _strut(p0, p1, chord=60.0, thick=18.0, ext=10.0):
@@ -824,7 +980,10 @@ def wake_boards(p: CarParams):
     """Front wheel wake board, Y >= 0, car frame: `wb_elements` cambered vertical vanes
     stacked in Z with `wb_slot` gaps, joined by a leading-edge tower and standing on a
     foot plate that overlaps the floor's front corner. The whole outline is yawed
-    inwards by `wb_yaw` and cambered to turn the tyre wake further inboard."""
+    inwards by `wb_yaw` and cambered to turn the tyre wake further inboard.
+    G0 only (frozen); other levels get the legal `floor_boards`."""
+    if p.geom_level != "G0":
+        return floor_boards(p)
     t = p.floor_thickness
     yaw = math.radians(p.wb_yaw)
     dx, dy = math.cos(yaw), -math.sin(yaw)          # chord direction, towards inboard
@@ -855,13 +1014,77 @@ def wake_boards(p: CarParams):
     return _fuse(foot, tower, *elems)
 
 
+def floor_boards(p: CarParams):
+    """Floor boards in RV-FLOOR-BOARD on a foot in RV-FLOOR-FOOT (G1_WB_* table), Y >= 0,
+    car frame: `wb_elements` cambered vertical vanes (same section family as before)
+    along the inward-leaning band, slots parallel to the sloping §6.3 top, a
+    leading-edge tower, and the foot plate that overlaps the outer floor."""
+    yaw = math.radians(G1_WB_YAW)
+    dx, dy = math.cos(yaw), -math.sin(yaw)          # chord direction, towards inboard
+    nx, ny = -dy, dx                                # outboard normal
+    lx, ly = G1_WB_LE
+    c = p.wb_chord
+    s, h = _naca4(0.04, 0.4, 0.06, npts=40)         # camber bulges outboard
+    X, Y = lx + c * (s * dx + h * nx), ly + c * (s * dy + h * ny)
+    z_foot = G1_WB_FOOT_Z[1]
+    (xa, za), (xb, zb) = G1_WB_TOP
+    top = lambda x: min(za + (x - xa) * (zb - za) / (xb - xa), za) - G1_WB_TOP_MARGIN
+    edge = cq.Edge.makeSpline([V(xi, yi, z_foot - 2) for xi, yi in zip(X, Y)])
+    te = cq.Edge.makeLine(V(X[-1], Y[-1], z_foot - 2), V(X[0], Y[0], z_foot - 2))
+    full = cq.Solid.extrudeLinear(cq.Face.makeFromWires(cq.Wire.assembleEdges([edge, te])),
+                                  V(0, 0, za + 10 - z_foot))
+    # band k lies between two planes through X (Y-parallel): heights scale with top(x)
+    n, gap = p.wb_elements, p.wb_slot
+    x0, x1 = float(X.min()), float(X.max())
+
+    def plane(k, upper):
+        """Z of band k's lower (upper=False) / upper boundary at x."""
+        def z(x):
+            hk = (top(x) - z_foot - (n - 1) * gap) / n
+            return z_foot + k * (hk + gap) + (hk if upper else 0.0)
+        return z
+
+    elems = []
+    for k in range(n):
+        lo, hi = plane(k, False), plane(k, True)
+        el = full
+        if k > 0:
+            el = el.intersect(regvol.half_space((x0, 0, lo(x0)), (x1, 0, lo(x1)), (x0, 1, lo(x0)),
+                                                keep=(0, 0, 1)))
+        el = el.intersect(regvol.half_space((x0, 0, hi(x0)), (x1, 0, hi(x1)), (x0, 1, hi(x0)),
+                                            keep=(0, 0, -1)))
+        elems.append(el)
+    tower = _strut((lx + 20 * dx, ly + 20 * dy, z_foot - 5), (lx + 20 * dx, ly + 20 * dy, top(lx + 20)),
+                   chord=45, thick=16, ext=0)
+    foot = _extrude_xy(G1_WB_FOOT, *G1_WB_FOOT_Z)
+    return _fuse(foot, tower, *elems)
+
+
 def mirrors(p: CarParams):
     """Mirror housing (ellipsoid 150 x 110 x 60 mm) on a streamlined stalk, beside the
-    cockpit ahead of the sidepod inlet, as on the FIA 2026 renders. Y >= 0, car frame."""
+    cockpit ahead of the sidepod inlet, as on the FIA 2026 renders. Y >= 0, car frame.
+    G0 only (frozen); other levels get `mirrors_g1` inside RV-MIRROR-*."""
+    if p.geom_level != "G0":
+        return mirrors_g1(p)
     x, y, z = 1000.0, 520.0, 660.0
     unit = cq.Solid.makeSphere(1.0, angleDegrees1=-90, angleDegrees2=90)
     housing = unit.transformGeometry(cq.Matrix([[75, 0, 0, x], [0, 55, 0, y], [0, 0, 30, z]]))
     stalk = _strut(chassis_point(p, x, 0.45, 0.85), (x, y - 30, z), chord=50, thick=14)
+    return _fuse(housing, stalk)
+
+
+def mirrors_g1(p: CarParams):
+    """Housing ellipsoid aligned with the RV-MIRROR-BODY parallelogram, on a stalk that
+    stays inside RV-MIRROR-ISTAY from inside the chassis to the housing (G1_MIRROR_*)."""
+    cx, cy, cz = G1_MIRROR_CENTRE
+    a, b, h = G1_MIRROR_AXES
+    sl, cl = math.sin(G1_MIRROR_LEAN), math.cos(G1_MIRROR_LEAN)
+    unit = cq.Solid.makeSphere(1.0, angleDegrees1=-90, angleDegrees2=90)
+    # columns: long axis (lean off +Y towards +X), across, Z
+    housing = unit.transformGeometry(cq.Matrix([[a * sl, b * cl, 0, cx],
+                                                [a * cl, -b * sl, 0, cy],
+                                                [0, 0, h, cz]]))
+    stalk = _strut(*G1_MIRROR_STALK, chord=50, thick=14)
     return _fuse(housing, stalk)
 
 

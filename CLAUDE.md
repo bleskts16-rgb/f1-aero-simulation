@@ -42,8 +42,11 @@ F1 셋업 → 파라메트릭 CAD → OpenFOAM → 공력 서로게이트 → QS
   프롬프트 틀은 [prompt-template.md](.claude/skills/clean-cad/references/prompt-template.md)에 있다.
 - 형상을 바꾸면 `build_car.py`를 돌려 규정 점검과 `cad/qa.py` 검사(로프트 이탈, 양의 부피, 불리언 적합성, STL 닫힘)가 모두 OK인지 확인한다.
   NG가 있으면 exit 1이다. **계산 실패나 확인하지 않은 항목은 통과가 아니다.** 보고할 때 실제로 돌린 검사와 확인하지 않은 항목을 구분한다.
+- **새 형상은 모두 2026 기준 볼륨을 만족해야 한다(2026-10-21 사용자 결정).** `cad/regvol.py`(App.1 본문 그대로)의 검사를 G0를 뺀 모든 형상에 강제하고, NG면 exit 1이다.
+  설계 방식은 clean-cad 스킬 R1~R5(허용 공간을 먼저 그리고 그 안에 설계, 액티브 에어로 두 위치 확인, CAD 전용 볼륨에는 부품을 두지 않음)를 따른다.
+  G0는 동결이라 같은 검사를 정보(`-- `)로만 출력한다. G0는 앞날개, 뒷날개, 바닥이 기준 볼륨을 벗어난 규정 미준수 형상이다.
 - 형상을 바꾼 뒤에는 렌더를 직접 열어 확인한다. `render_car.py`(pyvista)는 깊이 정렬이 정확하고, `build_car.py`의 matplotlib 6면 그림은 빠른 확인용이다.
-- 형상 수준: **G0**는 규정 볼륨 형상이고 grid 연구의 기준이라 바꾸지 않는다. **G1**은 FIA 2026 공식 컨셉카 렌더를 닮게 한 형상이다(`--g1`, `--fia`).
+- 형상 수준: **G0**는 grid 연구의 기준이라 바꾸지 않는다(규정 기준 볼륨은 만족하지 않음). **G1**은 FIA 2026 공식 컨셉카 렌더를 닮게 하고, 2026-10-21부터 기준 볼륨을 모두 만족하도록 고친 형상이다(`--g1`, `--fia`).
 - 형상을 바꾸지 않는 수정(검사, 리팩터)은 baseline STL 해시가 그대로인지 확인한다.
 - 지정한 치수와 특징(필렛 반경, 슬롯 간격 등)을 조용히 줄이거나 빼지 않는다. 안 되면 보고한다.
 - `third_party/text-to-cad/`는 읽기 전용 참고 자료다. 수치를 가져올 때는 좌표를 변환하고(x_우리 = −x_그쪽), 출처 커밋을 남긴다.
@@ -61,6 +64,7 @@ python scripts/build_car.py --half                                   # 반쪽 �
 python scripts/build_car.py --half --details                         # 헤일로·서스펜션·웨이크 보드·미러 포함 (G0)
 python scripts/build_car.py --half --fia                             # G1(FIA 렌더 스타일) + 상세 부품 → cad/out/fia2026_half
 python scripts/render_car.py baseline_half fia2026_half              # pyvista 3D 렌더·비교 → docs/figures/render_*.png
+python scripts/plot_regvol.py [--g0]                                 # 부품과 기준 볼륨 단면 비교 → docs/figures/regvol_sections_*.png
 $env:F1_CAR="fia2026_half"; paraview --script=scripts/pv_car.py      # ParaView로 형상 보기 (PowerShell, 저장소 루트에서)
 python scripts/run_lap_2026.py Monza                                 # 2026 규정 랩 (lapsim/rules2026.py)
 python scripts/aero_sensitivity_2026.py                              # 공력 민감도 → CFD 정확도 목표

@@ -47,6 +47,13 @@ python scripts/render_car.py baseline_half fia2026_half   # 전후 나란히
 - [ ] 부품끼리 겹친 자리에 틈, 단차, 비집고 나온 면이 없는가(J1)
 - [ ] 아랫면: 바닥, 사이드포드, 디퓨저 이음이 깨끗한가(아래 시점 필수)
 
+## 규정 기준 볼륨 (R1~R5)
+
+- [ ] `build_car.py`의 `App.1 ...` 검사 줄이 모두 OK인가(G0가 아니면 강제, NG면 exit 1)
+- [ ] 액티브 에어로 두 위치(플랩 기본, X 모드 `--fw-flap-delta -10 --rw-flap-delta -25`) 모두 OK인가(R4)
+- [ ] `python scripts/plot_regvol.py` 단면 그림에서 빨강(부품)이 파랑(기준 볼륨) 밖에 없는가
+- [ ] FIA CAD 파일로만 정의된 볼륨에 걸리는 부품이 새로 생기지 않았는가(R5)
+
 ## CFD 관점
 
 - [ ] 2 mm 이하의 틈이나 장식이 생기지 않았는가

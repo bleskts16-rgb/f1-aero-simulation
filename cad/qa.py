@@ -184,6 +184,26 @@ def attached(name, shape, targets, tol=0.01):
     return out
 
 
+def outside(shape, allowed, min_volume=1.0, n_max=600):
+    """Material of `shape` that lies outside `allowed` (a reference volume or a union
+    of them): (volume [mm^3], max depth [mm], deepest point). Depth is the distance
+    from the surface points of the excess to `allowed`, sampled at up to n_max
+    tessellation vertices, so it can miss the true maximum by about the sampling."""
+    import cadquery as cq
+    ex = shape.cut(allowed)
+    vol = sum(signed_volume(s) for s in ex.Solids())
+    if vol < min_volume:
+        return max(vol, 0.0), 0.0, None
+    verts, _ = ex.tessellate(0.5, 0.2)
+    step = max(1, len(verts) // n_max)
+    best, where = 0.0, None
+    for v in verts[::step]:
+        d = cq.Vertex.makeVertex(v.x, v.y, v.z).distance(allowed)
+        if d > best:
+            best, where = d, (v.x, v.y, v.z)
+    return vol, best, where
+
+
 def report(checks, title="geometry QA"):
     print(f"  -- {title}")
     w = max(len(c.name) for c in checks)

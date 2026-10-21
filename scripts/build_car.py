@@ -23,7 +23,7 @@ import cadquery as cq
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from cad import car2026, qa  # noqa: E402
+from cad import car2026, qa, regvol  # noqa: E402
 from cad.car2026 import CarParams, sprung_parts, build_car, _wing_stack  # noqa: E402
 
 COLORS = {"body": "#3b4a6b", "front_wing": "#b0413e", "rear_wing": "#b0413e",
@@ -62,18 +62,31 @@ def regulation_checks(p, sprung, ground):
     add("App.1 s25/26 RW Z max [mm]", rw.zmax, "<= 880", rw.zmax <= 880)
     add("App.1 s26 RW rear X (XR) [mm]", rw.xmax - p.xr, "<= 750", rw.xmax - p.xr <= 750)
 
-    for tag, le, ch, an, gap, ov, dlt, lo, hi in (
-            ("3.10.1e FW", p.fw_le, p.fw_chords, p.fw_angles, p.fw_gap, p.fw_overlap,
-             p.fw_flap_delta, 5, 15),
-            ("3.11.1d RW", (p.xr + p.rw_le[0], p.rw_le[1]), p.rw_chords, p.rw_angles,
-             p.rw_gap, p.rw_overlap, p.rw_flap_delta, 10, 15)):
-        el = _wing_stack(le, ch, an, -10, 10, gap, ov, dlt)
-        gaps = [el[i].distance(el[i + 1]) for i in range(len(el) - 1)]
-        add(f"{tag} slot gaps [mm]", ", ".join(f"{g:.1f}" for g in gaps), f"{lo}..{hi}",
-            all(lo - 0.1 <= g <= hi + 0.1 for g in gaps))
+    if p.geom_level == "G0":
+        for tag, le, ch, an, gap, ov, dlt, lo, hi in (
+                ("3.10.1e FW", p.fw_le, p.fw_chords, p.fw_angles, p.fw_gap, p.fw_overlap,
+                 p.fw_flap_delta, 5, 15),
+                ("3.11.1d RW", (p.xr + p.rw_le[0], p.rw_le[1]), p.rw_chords, p.rw_angles,
+                 p.rw_gap, p.rw_overlap, p.rw_flap_delta, 10, 15)):
+            el = _wing_stack(le, ch, an, -10, 10, gap, ov, dlt)
+            gaps = [el[i].distance(el[i + 1]) for i in range(len(el) - 1)]
+            add(f"{tag} slot gaps [mm]", ", ".join(f"{g:.1f}" for g in gaps), f"{lo}..{hi}",
+                all(lo - 0.1 <= g <= hi + 0.1 for g in gaps))
+    else:
+        # span-lofted elements: gaps at every station of the span table
+        for tag, layouts, lo, hi in (("3.10.1e FW", car2026.fw_span_layouts(p), 5, 15),
+                                     ("3.11.1d RW", car2026.rw_span_layouts(p), 10, 15)):
+            gaps = []
+            for y, lay in layouts:
+                el = [car2026._wing_element(*q, y, y + 1.0)[0] for q in lay]
+                gaps += [el[i].distance(el[i + 1]) for i in range(len(el) - 1)]
+            add(f"{tag} slot gaps, {len(layouts)} stations [mm]",
+                f"{min(gaps):.1f}..{max(gaps):.1f}", f"{lo}..{hi}",
+                all(lo - 0.1 <= g <= hi + 0.1 for g in gaps))
 
-    if p.geom_level == "G1":
+    if p.geom_level != "G0":
         rows += g1_wing_checks(p, sprung)
+    rows += volume_checks(p, sprung)
 
     wheels = ground["wheels_front"].fuse(ground["wheels_rear"])
     clear_parts = [k for k in CLEAR_OF_TYRES if k in ground]
@@ -102,10 +115,50 @@ def g1_wing_checks(p, sprung):
             ("3.10.6h FWEP obscures RS-FWEP-SIDE from inboard", car2026.RS_FWEP_SIDE, "xz", "y",
              (600.0, 950.0), fw),
             ("3.11 RW endplate obscures RS-RWEP from the side",
-             [(p.xr + x, z) for x, z in car2026.RS_RWEP], "xz", "y", (380.0, 700.0), rw)):
+             # rays from Y 300: the lower endplate folds in to Y 355 (§26), the
+             # twin pylons (Y 28..43) stay out of the ray range
+             [(p.xr + x, z) for x, z in car2026.RS_RWEP], "xz", "y", (300.0, 700.0), rw)):
         frac, missed = qa.obscured(shape, poly, axes, ray, rng)
         val = f"{100 * frac:.1f} %" + (f", e.g. {missed[0][0]:.0f},{missed[0][1]:.0f}" if missed else "")
         rows.append((desc, val, "100 %", not missed))
+    return rows
+
+
+VOLUME_TOL = 1.0   # [mm] depth outside a reference volume still taken as inside (tessellation)
+
+
+def volume_checks(p, sprung):
+    """Parts against the Appendix 1 reference volumes written out in the text
+    (cad/regvol.py): material outside their union, as volume and depth. Enforced on
+    every level except G0 (fixed for the grid studies, built before these rules were
+    read), where the rows are information only (ok = None). Parts mounted on the body
+    are judged on what lies outside the body (their buried roots are not bodywork in
+    the flow)."""
+    xr, xc = p.xr, p.xc
+    floor = regvol.floor_volumes(xr, xc)
+    body = sprung["body"]
+    exposed = lambda k: sprung[k].cut(body) if k in sprung else None
+    groups = (
+        ("3.10 front wing in RV-FW-PROFILES/FWEP-*/FW-PYLON", sprung["front_wing"],
+         regvol.front_wing_volumes()),
+        ("3.11 rear wing in RV-RW-PROFILES/RWEP-BODY/RW-PYLON/stays", sprung["rear_wing"],
+         regvol.rear_wing_volumes(xr)),
+        ("3.5 floor + diffuser in RV-FLOOR-*", car2026._fuse(*car2026.floor_parts(p)), floor),
+        ("3.5 wake/floor boards in RV-FLOOR-*", exposed("wake_boards"), floor),
+        ("3.4 mirrors in RV-MIRROR-BODY/stays", exposed("mirrors"), regvol.mirror_volumes(xc)),
+    )
+    half = car2026._box(-3000, 8000, 0, 2000, -500, 2000)      # volumes are built for Y >= 0
+    rows = []
+    for desc, shape, vols in groups:
+        if shape is None:
+            continue
+        vol, depth, where = qa.outside(shape.intersect(half), regvol.fuse(*vols.values()))
+        val = f"{vol / 1000:.1f} cm3 out, max {depth:.0f} mm"
+        if where:
+            x, y, z = where
+            val += f" at X {x:.0f} (XR {x - xr:.0f}), Y {y:.0f}, Z {z:.0f}"
+        ok = depth <= VOLUME_TOL if p.geom_level != "G0" else None
+        rows.append((f"App.1 {desc}", val, f"<= {VOLUME_TOL:g} mm", ok))
     return rows
 
 
@@ -201,7 +254,8 @@ def main():
     ap.add_argument("--g1", action="store_true",
                     help="G1 shapes after the FIA 2026 renders (spoon front wing, undercut sidepods)")
     ap.add_argument("--fia", action="store_true", help="--g1 --details, output name 'fia2026'")
-    ap.add_argument("--wb-yaw", type=float, help="wake board inward alignment [deg]")
+    ap.add_argument("--wb-yaw", type=float,
+                    help="G0 wake board inward alignment [deg] (G1 floor boards follow RV-FLOOR-BOARD)")
     ap.add_argument("--no-render", action="store_true")
     args = ap.parse_args()
     args.g1 |= args.fia
@@ -234,12 +288,13 @@ def main():
     print(f"built in {time.time() - t0:.1f} s  (rake {p.pitch_deg:.2f} deg)")
 
     rows = regulation_checks(p, sprung, ground)
-    reg_ok = all(r[3] for r in rows)
+    reg_ok = all(r[3] is not False for r in rows)
     w = max(len(r[0]) for r in rows)
-    print("  -- regulations (tight bounds)")
+    print("  -- regulations (tight bounds; '-- ' = information only, not enforced on G0)")
     for desc, val, lim, ok in rows:
         val = f"{val:.1f}" if isinstance(val, float) else val
-        print(f"  {'OK ' if ok else 'NG '} {desc:<{w}}  {val:>16}  ({lim})")
+        mark = "-- " if ok is None else ("OK " if ok else "NG ")
+        print(f"  {mark} {desc:<{w}}  {val:>16}  ({lim})")
 
     for name, s in parts.items():
         bb = _BB(s)
