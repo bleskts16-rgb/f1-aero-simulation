@@ -2,6 +2,7 @@
 
 F1 셋업 → 파라메트릭 CAD → OpenFOAM → 공력 서로게이트 → QSS 랩타임으로 이어지는 개인 프로젝트.
 진행 상황과 다음 할 일은 **[docs/worklog.md](docs/worklog.md)**에 날짜별로 적는다. 새 세션은 거기서 시작할 것.
+서로게이트용 형상 계열(기준점 G1 v3, 설계 변수와 범위)은 **[docs/design_parameters.md](docs/design_parameters.md)**에 정리한다(2026-10-23 초안, 미확정).
 
 ## 작업 방식 (두 PC, 서로 다른 Claude 계정)
 - 회사 PC와 집 PC에서 번갈아 작업한다. Claude 계정이 달라 대화·메모리는 공유되지 않는다.
