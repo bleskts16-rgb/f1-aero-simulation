@@ -181,6 +181,13 @@ G1_FW_SPAN = ((0.0, 0.64, -2.0, 1.0, 4.0, 84.1), (150.0, 0.76, 0.0, 7.0, 14.0, 9
               (300.0, 0.86, 2.0, 11.0, 20.0, 123.8), (450.0, 0.84, 3.0, 12.0, 21.0, 150.7),
               (560.0, 0.72, 2.0, 10.0, 18.0, 169.9), (670.0, 0.62, 2.0, 10.0, 18.0, 181.7))
 G1_FW_STATIONS = 13
+# The centre of the wing stays below Z 125 while the nose underside starts at Z ~135,
+# so the wing hangs from two pylons in RV-FW-PYLON (App.1 §31 row 5: XF -1200..-1025,
+# Y 50..150, Z 60..200). Side outline (XF, Z, corner radius): foot inside the main
+# plane (Z 70..84 there), top inside the nose flank.
+G1_FW_PYLON = ((-1130.0, 78.0, 0.0), (-1130.0, 195.0, 10.0), (-1082.0, 195.0, 10.0),
+               (-1082.0, 78.0, 0.0))
+G1_FW_PYLON_Y = (50.5, 62.0)
 # Endplate = body + inboard footplate + outboard footplate + fence (Art. 3.10.6).
 # Body: Y 662..678 in RV-FWEP-BODY (Y 600..680, Z 50..375, top trimmed by the plane
 # through [-1050, 225] and [-675, 375]); side outline (XF, Z, corner radius), then
@@ -227,18 +234,25 @@ G1_HELMET = ((-1.00, 12.0, 705.0, 760.0, 2.0), (-0.90, 62.0, 610.0, 805.0, 2.2),
 # is level at Y = 0. Columns: (anchor, dX, Z bottom, bottom half width, Z shoulder,
 # shoulder half width, Z roof edge, roof half width, Z crown); anchor F/C/R = front
 # axle / cockpit rear XC / rear axle. Envelope (bottom..crown, shoulder width)
-# follows the G0 spine, so the regulation boxes and the suspension anchors hold.
+# follows the G0 spine, so the suspension anchors hold, but sits inside RV-BODY-FRONT
+# (App.1 §8, 2026-10-21): the underside stays above the §8.2 line (Z 125 to XF -1000,
+# 225 at XF 0, 195 at XC -875), the crown below Z 645 from XC -875 to -350 and below
+# Z 770 up to the cockpit rear XC 0; the engine cover rises only behind XC 0.
 G1_BODY = (("F", -1250, 150, 20, 180, 38, 205, 25, 212),
            ("F", -1150, 135, 45, 185, 75, 228, 45, 240),
-           ("F", -900, 130, 70, 215, 110, 285, 70, 302),
-           ("F", -500, 145, 95, 280, 150, 395, 95, 420),
-           ("F", -100, 160, 120, 360, 190, 510, 120, 540),
-           ("F", 500, 60, 170, 430, 232, 590, 150, 620),
-           ("F", 900, 10, 210, 470, 265, 620, 170, 640),
-           ("C", -450, 10, 230, 490, 290, 640, 190, 655),
+           ("F", -900, 140, 70, 215, 110, 285, 70, 302),
+           ("F", -500, 180, 95, 280, 150, 395, 95, 420),
+           ("F", -100, 220, 120, 360, 190, 510, 120, 540),
+           ("F", 0, 230, 128, 372, 194, 523, 125, 553),
+           ("F", 500, 222, 170, 430, 232, 590, 150, 620),
+           ("F", 900, 212, 210, 470, 265, 620, 170, 640),
+           ("C", -700, 130, 220, 480, 278, 625, 180, 640),
+           ("C", -450, 10, 230, 490, 290, 630, 190, 641),
+           ("C", -355, 10, 232, 505, 295, 632, 195, 642),
            ("C", -230, 10, 235, 520, 300, 680, 200, 700),
-           ("C", -80, 10, 230, 560, 285, 790, 170, 830),
-           ("C", 20, 10, 215, 590, 260, 900, 140, 940),
+           ("C", -80, 10, 230, 560, 285, 710, 170, 725),
+           ("C", 0, 10, 220, 580, 268, 718, 150, 735),
+           ("C", 150, 10, 205, 580, 245, 728, 130, 745),
            ("C", 320, 10, 190, 560, 230, 840, 120, 880),
            ("R", -700, 30, 150, 440, 190, 600, 110, 640),
            ("R", -200, 80, 110, 340, 140, 450, 80, 480),
@@ -611,7 +625,7 @@ def body(p: CarParams):
         # deep undercut at the front (the floor stays below an open channel), top
         # falling towards the rear (downwash), narrow coke-bottle waist
         pods = [(1040, 300, 330, 430), (1150, 560, 280, 510), (1350, 690, 220, 545),
-                (1800, 670, 150, 520), (2300, 560, 70, 455), (2800, 380, 10, 370),
+                (1800, 670, 150, 520), (2300, 560, 70, 455), (2800, 380, 52, 370),
                 (xr - 100, 170, 60, 300)]
     else:
         pods = [(1040, 300, 280, 370), (1120, 560, 150, 470), (1300, 680, 10, 560),
@@ -733,20 +747,22 @@ def helmet_sections(p: CarParams, n=17):
 
 
 def airbox(p: CarParams):
-    """G1 roll-hoop airbox right behind the driver's head (FIA 2026 renders):
-    rounded-triangle sections that rise from the engine cover to a forward-facing
-    mouth. Top kept below the 970 mm RV-EC limit with margin for loft bowing."""
+    """G1 roll-hoop airbox behind the driver's head (FIA 2026 renders): rounded-
+    triangle sections that rise from the engine cover to a forward-facing mouth. It
+    starts behind the cockpit rear XC 0, where RV-BODY-FRONT / RV-EC first allow
+    more than Z 770 (App.1 §8.5, §13.4); top below the 970 mm limit with margin."""
     xc = p.xc
-    return _loft([(xc - 150, 120, 760, 950, 2.2), (xc - 70, 135, 700, 955, 2.4),
-                  (xc + 70, 140, 640, 945, 2.6), (xc + 320, 120, 600, 880, 2.6)],
+    return _loft([(xc + 10, 120, 760, 950, 2.2), (xc + 90, 135, 700, 955, 2.4),
+                  (xc + 230, 140, 640, 945, 2.6), (xc + 480, 120, 600, 880, 2.6)],
                  label="airbox")
 
 
 def airbox_mouth(p: CarParams):
-    """Blind elliptical intake, 100 mm deep: the air path is not modelled (closed
-    body for CFD), but the mouth and its stagnation region are."""
+    """Blind elliptical intake, 100 mm deep into the airbox front (XC 10): the air
+    path is not modelled (closed body for CFD), but the mouth and its stagnation
+    region are."""
     xc = p.xc
-    plane = cq.Plane(origin=V(xc - 160, 0, 860), xDir=V(0, 1, 0), normal=V(1, 0, 0))
+    plane = cq.Plane(origin=V(xc, 0, 860), xDir=V(0, 1, 0), normal=V(1, 0, 0))
     return cq.Workplane(plane).ellipse(80, 62).extrude(110).val()
 
 
@@ -834,15 +850,16 @@ def front_wing_g1(p: CarParams):
     rising and twisting outboard into the endplate), swept back along RS-FW-SECTION
     out to Y 670, and the four-part endplate of Art. 3.10.6 - body, inboard footplate,
     outboard footplate (the tip that sticks out ahead of the tyre, to Y 900) and
-    fence - all trimmed by the wheel cylinder."""
+    fence - all trimmed by the wheel cylinder - and two pylons up into the nose."""
     elems = _span_elements(fw_span_layouts(p), "fw")
+    pylon = _extrude_xz(_rounded_outline(G1_FW_PYLON), *G1_FW_PYLON_Y)
 
     body = _extrude_xz(_rounded_outline(G1_FW_EP_BODY), *G1_FW_EP_BODY_Y)
     ifp = _extrude_xy(fw_footplate_outline(*G1_FW_IFP[:2]), *G1_FW_IFP[2:])
     ofp = _extrude_xy(fw_footplate_outline(*G1_FW_OFP[:2]), *G1_FW_OFP[2:])
     fence = _extrude_xz(_rounded_outline(G1_FW_FENCE), *G1_FW_FENCE_Y)
     endplate = _fuse(body, ifp, ofp, fence).cut(_wheel_cut())
-    return _fuse(*elems, endplate)
+    return _fuse(*elems, endplate, pylon)
 
 
 def rw_endplate_sections(p: CarParams, n=17):

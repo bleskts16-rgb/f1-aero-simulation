@@ -24,13 +24,20 @@ plt.rcParams.update({"font.family": "serif", "font.size": 9, "xtick.direction": 
                      "ytick.direction": "in", "xtick.top": True, "ytick.right": True})
 
 
-def section(shape, x):
-    """Triangles of the X = x section of `shape`, projected on (Y, Z)."""
-    s = shape.intersect(car2026._box(x - 0.25, x + 0.25, -10, 2000, -100, 2000))
+def section(shape, at):
+    """Triangles of a section of `shape`: at = x (number) cuts X = x and projects on
+    (Y, Z); at = ("y", y) cuts Y = y and projects on (X, Z)."""
+    if isinstance(at, tuple):
+        y = at[1]
+        s = shape.intersect(car2026._box(-3000, 8000, y - 0.25, y + 0.25, -100, 2000))
+        pick = lambda q: (q.x, q.z)
+    else:
+        s = shape.intersect(car2026._box(at - 0.25, at + 0.25, -10, 2000, -100, 2000))
+        pick = lambda q: (q.y, q.z)
     if not s.Solids():
         return []
     v, f = s.tessellate(0.3, 0.2)
-    v = np.array([[q.y, q.z] for q in v])
+    v = np.array([pick(q) for q in v])
     return [v[list(t)] for t in f]
 
 
@@ -46,12 +53,14 @@ def main():
     fwv = list(regvol.front_wing_volumes().values())
     rwv = list(regvol.rear_wing_volumes(xr).values())
     flv = list(regvol.floor_volumes(xr, xc).values())
-    panels = [("Front wing, XF = -900", -900, fwv, [sp["front_wing"]]),
+    bdv = list(regvol.body_volumes(p.xa, xc, xr).values()) + flv
+    panels = [("Body, side section at Y = 60 (X [mm] across)", ("y", 60.0), bdv, [sp["body"]]),
+              ("Front wing, XF = -900", -900, fwv, [sp["front_wing"]]),
               ("Floor board area, XF = 900", 900, flv, [floor] + ([sp["wake_boards"]] if "wake_boards" in sp else [])),
               ("Floor, XR = -1500", xr - 1500, flv, [floor]),
               ("Diffuser, XR = 0", xr, flv, [floor]),
               ("Rear wing, XR = 450", xr + 450, rwv, [sp["rear_wing"]])]
-    fig, axs = plt.subplots(len(panels), 1, figsize=(7, 2.3 * len(panels)))
+    fig, axs = plt.subplots(len(panels), 1, figsize=(7, 2.3 * len(panels) + 0.6))
     for ax, (title, x, vols, parts) in zip(axs, panels):
         for v in vols:
             ax.add_collection(PolyCollection(section(v, x), facecolor="#c9d3e6", edgecolor="none"))
@@ -61,7 +70,7 @@ def main():
         ax.autoscale()
         ax.set_aspect("equal")
         ax.set_title(title, fontsize=9)
-        ax.set_xlabel("Y [mm]")
+        ax.set_xlabel("X [mm]" if isinstance(x, tuple) else "Y [mm]")
         ax.set_ylabel("Z [mm]")
     fig.suptitle(f"{lvl} parts (red) vs App.1 reference volumes (blue), Y >= 0 half", fontsize=10)
     fig.tight_layout()

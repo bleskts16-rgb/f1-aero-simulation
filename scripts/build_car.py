@@ -139,6 +139,10 @@ def volume_checks(p, sprung):
     body = sprung["body"]
     exposed = lambda k: sprung[k].cut(body) if k in sprung else None
     groups = (
+        # nose, chassis, sidepods, engine cover, tail and the floor fused into them;
+        # the driver's helmet and the halo (a prescribed part) are separate parts
+        ("3.7-3.9 body in RV-BODY-FRONT/DRI-COOL/SIDEPOD/EC/TAIL/TAILPIPE/FLOOR-*", body,
+         {**regvol.body_volumes(p.xa, xc, xr), **floor}),
         ("3.10 front wing in RV-FW-PROFILES/FWEP-*/FW-PYLON", sprung["front_wing"],
          regvol.front_wing_volumes()),
         ("3.11 rear wing in RV-RW-PROFILES/RWEP-BODY/RW-PYLON/stays", sprung["rear_wing"],

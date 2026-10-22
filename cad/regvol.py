@@ -5,9 +5,10 @@ Car frame, Y >= 0 half (App.1 §1.4: every volume is symmetric about Y = 0), mm.
 XF = X (front axle), XR = X - p.xr, XC = X - p.xc. XDIF (final drive axis, which
 must lie within XR +-60, Art. 9.7.1) is taken as XR: the model has no gearbox.
 
-Only the volumes written out in the text are built here. Volumes defined by FIA
-CAD files alone (survival cell RV-CH-*, RV-DIFF, wheel drums) are not available,
-so the parts they govern (chassis, diffuser fences) are not checked.
+Only the volumes written out in the text are built here; together they bound the
+whole body (Art. 3.7-3.9), floor, mirrors and wings. Volumes defined by FIA CAD
+files alone (the minimum survival-cell volumes RV-CH-*-MIN, RV-DIFF, wheel drums)
+are not available: parts that only they could judge are left out of the model.
 
 Interpretations, noted where they are used:
 - a trimming "sheet" acts only over its own extrusion range; its first and last
@@ -216,6 +217,65 @@ def rv_floor_bib(xc):
 def floor_volumes(xr, xc):
     return {"RV-FLOOR-BODY": rv_floor_body(xr), "RV-FLOOR-FOOT": rv_floor_foot(),
             "RV-FLOOR-BOARD": rv_floor_board(), "RV-FLOOR-BIB": rv_floor_bib(xc)}
+
+
+# ----------------------------------------------------------- body §8, §11-13, §15-16
+
+def _y_cylinder(xc0, zc0, diameter, y0, y1):
+    return cq.Solid.makeCylinder(diameter / 2, y1 - y0, V(xc0, y0, zc0), V(0, 1, 0))
+
+
+def rv_body_front(xc):
+    """§8: nose + forward chassis + mid chassis (RV-NOSE / CH-FRONT / CH-MID)."""
+    C = lambda x: xc + x
+    a = _y_cylinder(C(-1000), -4853, 11000, 0, 400).intersect(
+        prism([(C(-875), 195), (C(-875), 645), (-1300, 645), (-1300, 125), (-1000, 125),
+               (C(-1830), 225)], "xz", 0, 400))                                  # §8.1-8.4
+    b = prism([(C(-875), 0), (C(300), 0), (C(300), 970), (C(0), 970), (C(0), 770),
+               (C(-350), 770), (C(-350), 645), (C(-875), 645)], "xz", 0, 400)    # §8.5-8.6
+    v = a.fuse(b).intersect(prism([(-1300, 0), (-1300, 150), (C(-1830), 200), (C(-1015), 265),
+                                   (C(-400), 400), (C(300), 400), (C(300), 0)], "xy", 0, 970))
+    return v.cut(cuboid((C(0), 150, 0), (C(300), 400, 970))).clean()             # §8.11-8.12
+
+
+def rv_dri_cool(xa, xc):
+    """§11: cuboid on XA, intersected with the D11040 cylinder."""
+    return cuboid((xa + 100, 0, 550), (xa + 525, 100, 675)).intersect(
+        _y_cylinder(xc - 1000, -4855, 11040, 0, 100))
+
+
+def rv_sidepod():
+    return prism([(900, 0), (900, 275), (1200, 715), (1300, 715), (1300, 0)], "xy", 50, 600)
+
+
+def rv_ec(xr, xc):
+    R, C = (lambda x: xr + x), (lambda x: xc + x)
+    v1 = prism([(1300, 0), (1300, 715), (R(-1300), 715), (R(-50), 225), (R(-50), 0)], "xy", 50, 600)
+    v1 = trim(v1, (C(0), 0, 600), (C(0), 725, 600), (R(-50), 0, 350), keep=(0, 0, -1))   # §13.3
+    v2 = prism([(C(300), 50), (R(-50), 50), (R(-50), 600), (C(500), 970), (C(300), 970)],
+               "xz", 0, 400)                                                              # §13.4-5
+    v3 = prism([(R(-160), 760), (R(-395), 760), (C(500), 970), (C(500), 500), (R(-160), 500)],
+               "xz", 0, 25)                                                               # §13.6-7
+    v4 = cuboid((C(0), 150, 50), (C(300), 400, 970))                                      # §13.8
+    v = fuse(v1, v2, v3, v4)
+    return trim(v, (R(-1300), 715, 50), (R(-1300), 715, 600), (R(-50), 225, 50), keep=(0, -1, 0))
+
+
+def rv_tail(xr):
+    """§15, with XDIF taken as XR (module docstring)."""
+    R = lambda x: xr + x
+    side = prism([(R(-110), 0), (R(-110), 480), (R(10), 480), (R(350), 380), (R(760), 380),
+                  (R(760), 175), (R(350), 175), (R(10), 0)], "xz", 0, 125)
+    plan = prism([(R(-110), 0), (R(760), 0), (R(760), 60), (R(350), 60), (R(10), 125),
+                  (R(-110), 125)], "xy", 0, 480)
+    return side.intersect(plan)
+
+
+def body_volumes(xa, xc, xr):
+    """Art. 3.7-3.9: front bodywork, sidepod, engine cover, tail, tailpipe."""
+    return {"RV-BODY-FRONT": rv_body_front(xc), "RV-DRI-COOL": rv_dri_cool(xa, xc),
+            "RV-SIDEPOD": rv_sidepod(), "RV-EC": rv_ec(xr, xc), "RV-TAIL": rv_tail(xr),
+            "RV-TAILPIPE": cuboid((xr - 55, 0, 350), (xr + 250, 75, 550))}            # §16
 
 
 # -------------------------------------------------------------------- mirrors §10
