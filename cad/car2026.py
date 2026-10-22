@@ -285,7 +285,11 @@ G1_FLOOR_MARGIN = 3.0           # inside every limit
 G1_FLOOR_STEP_Z = 50.0          # outer floor underside
 G1_FLOOR_WALL = 10.0            # step wall thickness, inside the §4.1 edge
 G1_FLOOR_WALL_START = 640.0     # XF where the upper planform first reaches past the §4.1 edge
-G1_FLOOR_KICK = (-700.0, -600.0)                       # XR: flat bottom -> diffuser roof
+# XR range of the kick-up from the flat bottom (Z 0) to the diffuser roof (Z 50). The
+# first G1 rose over XR -700..-600 (27 deg); its front face took the underfloor flow
+# head-on (body CD*A +0.011, 2026-10-22 split), so it now rises over 400 mm (7 deg).
+# Inside the §4.1 edge any Z 0..75 is legal, so the length is a design choice.
+G1_FLOOR_KICK = (-1000.0, -600.0)
 G1_DIFF_ROOF = ((-600.0, 50.0), (-450.0, 50.0), (165.0, 165.0))  # [XR, Z] underside (§4.20)
 G1_DIFF_SHEET = ((-400.0, 50.0), (-325.0, 50.0), (-175.0, 100.0), (165.0, 100.0))  # §4.23
 G1_DIFF_FENCE_Y = (347.0, 362.0)
