@@ -189,11 +189,14 @@ def main():
                 sys.exit(f"unfilled placeholders in {f.name}: {left}")
             f.write_bytes(text.encode("utf-8"))
 
+    # CarParams and the source commit of the STL set (build_car.py writes params.json)
+    pj = geom / "params.json"
+    geom_params = json.loads(pj.read_text(encoding="utf-8")) if pj.exists() else None
     meta = dict(name=name, geometry=str(geom.relative_to(ROOT)), level=args.level, scheme=args.scheme,
                 h0=h0, layers=lev["layers"], np=args.np, iterations=args.iter,
                 u_inf=u, rho=1.2, half_model=True, y_shift=Y_SHIFT,
                 cell_size_mm={f"L{n}": round(1000 * h0 / 2 ** n, 2) for n in range(7)},
-                values=values)
+                geometry_params=geom_params, values=values)
     (case / "case.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     sizes = ", ".join(f"L{n}={1000 * h0 / 2 ** n:.1f}mm" for n in (0, 3, 5, 6))
     print(f"created {case.relative_to(ROOT)}  ({nx}x{ny}x{nz} background, {sizes})")

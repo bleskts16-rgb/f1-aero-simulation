@@ -78,7 +78,7 @@ def regulation_checks(p, sprung, ground):
                                      ("3.11.1d RW", car2026.rw_span_layouts(p), 10, 15)):
             gaps = []
             for y, lay in layouts:
-                el = [car2026._wing_element(*q, y, y + 1.0)[0] for q in lay]
+                el = [car2026._wing_element(*q[:4], y, y + 1.0, q[4])[0] for q in lay]
                 gaps += [el[i].distance(el[i + 1]) for i in range(len(el) - 1)]
             add(f"{tag} slot gaps, {len(layouts)} stations [mm]",
                 f"{min(gaps):.1f}..{max(gaps):.1f}", f"{lo}..{hi}",
@@ -86,6 +86,7 @@ def regulation_checks(p, sprung, ground):
 
     if p.geom_level != "G0":
         rows += g1_wing_checks(p, sprung)
+        rows += shape_rule_checks(p, sprung)
     rows += volume_checks(p, sprung)
 
     wheels = ground["wheels_front"].fuse(ground["wheels_rear"])
@@ -121,6 +122,56 @@ def g1_wing_checks(p, sprung):
         frac, missed = qa.obscured(shape, poly, axes, ray, rng)
         val = f"{100 * frac:.1f} %" + (f", e.g. {missed[0][0]:.0f},{missed[0][1]:.0f}" if missed else "")
         rows.append((desc, val, "100 %", not missed))
+    return rows
+
+
+def _te_lower_angles(layouts, reach=40.0):
+    """Per element, the (min, max) angle [deg] against +X of the lower-surface tangent
+    within `reach` mm of the trailing edge, over every span station."""
+    out = None
+    for _, lay in layouts:
+        if out is None:
+            out = [[90.0, -90.0] for _ in lay]
+        for i, q in enumerate(lay):
+            x, z = car2026.wing_section_points(*q)
+            n = (len(x) + 1) // 2
+            lx, lz = x[:n][::-1], z[:n][::-1]                 # lower surface, LE -> TE
+            near = np.hypot(lx - lx[-1], lz - lz[-1]) <= reach
+            ang = np.degrees(np.arctan2(np.diff(lz[near]), np.diff(lx[near])))
+            out[i] = [min(out[i][0], ang.min()), max(out[i][1], ang.max())]
+    return out
+
+
+def shape_rule_checks(p, sprung):
+    """Art. 3 shape rules beyond the reference volumes, for every level except the
+    frozen G0. Each needs only the design tables, not a mesh."""
+    rows = []
+    fw = _te_lower_angles(car2026.fw_span_layouts(p))
+    rows.append(("3.10.1h FW lower surface rises in the last 40 mm [deg]",
+                 "min " + "/".join(f"{a[0]:.1f}" for a in fw), "> 0", all(a[0] > 0 for a in fw)))
+    rw = _te_lower_angles(car2026.rw_span_layouts(p))
+    lim = (10.0, 40.0, 65.0)
+    rows.append(("3.11.1e RW lower-surface angle in the last 40 mm [deg]",
+                 "max " + "/".join(f"{a[1]:.1f}" for a in rw), "<= 10/40/65",
+                 all(a[1] <= l for a, l in zip(rw, lim))))
+    if "wake_boards" in sprung:
+        x, y = car2026.floor_board_plan(p, npts=200)
+        n = (len(x) + 1) // 2
+        ox, oy = x[:n][::-1], y[:n][::-1]                   # outboard surface, LE -> TE
+        ang = np.degrees(np.arctan2(-np.diff(oy), np.diff(ox)))   # inward slope vs a Y-plane
+        d_le = np.hypot(ox - ox[0], oy - oy[0])[1:]
+        d_te = np.hypot(ox - ox[-1], oy - oy[-1])[1:]
+        c_min, d_min = ang[d_le > 100].min(), ang[d_te < 100].min()
+        rows.append(("3.5.4c floor board outboard surface inward [deg]", round(float(c_min), 1),
+                     ">= 10", c_min >= 10))
+        rows.append(("3.5.4d floor board last 100 mm inward [deg]", round(float(d_min), 1),
+                     "> 20", d_min > 20))
+        n_log = len(car2026.LOFT_LOG)
+        pods = car2026._loft(car2026.sidepod_sections(p), n=3.5, label="sidepods (check)")
+        del car2026.LOFT_LOG[n_log:]                        # already QA'd as part of the body
+        gap = pods.intersect(regvol.rv_sidepod()).distance(
+            sprung["wake_boards"].intersect(regvol.rv_floor_board()))
+        rows.append(("3.8.1b sidepod to floor board [mm]", round(gap, 1), "> 50", gap > 50))
     return rows
 
 
@@ -241,6 +292,18 @@ def render(parts, path, title):
     plt.close(fig)
 
 
+def git_source():
+    """Commit of the working tree and whether files that shape the car differ from it."""
+    import subprocess
+    run = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    try:
+        dirty = run("status", "--porcelain", "--", "cad", "scripts/build_car.py")
+        return dict(commit=run("rev-parse", "--short", "HEAD"), dirty=bool(dirty),
+                    command=" ".join(sys.argv[1:]))
+    except OSError:
+        return dict(commit=None, dirty=None, command=" ".join(sys.argv[1:]))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--name", default="baseline")
@@ -307,7 +370,10 @@ def main():
 
     outdir = ROOT / "cad" / "out" / (args.name + ("_half" if args.half else ""))
     export(parts, outdir)
-    (outdir / "params.json").write_text(json.dumps(p.to_dict(), indent=2), encoding="utf-8")
+    # the commit the geometry came from: cad/out is overwritten by later builds, so a
+    # CFD case can only be traced back through this record (make_cfd_case copies it)
+    (outdir / "params.json").write_text(json.dumps(dict(p.to_dict(), source=git_source()), indent=2),
+                                        encoding="utf-8")
     print(f"exported {outdir.relative_to(ROOT)}  (STL in m, STEP in mm)")
 
     geo_ok = qa.report(geometry_checks(parts, outdir, args.half), "geometry QA (cad/qa.py)")

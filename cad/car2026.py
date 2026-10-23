@@ -155,15 +155,19 @@ G1_RW_EP_LOWER = ((715.0, 228.5, 743.0, 552.5), (690.0, 229.0, 742.0, 554.0),
 G1_RW_EP_THICK = 15.0
 # Twin pylons in RV-RW-PYLON (App.1 §27: Y 25..80, not on the centreline), side
 # outline (dX from XR, Z, corner radius), from the tail up into the main plane.
-G1_RW_PYLON = ((215.0, 305.0, 0.0), (262.0, 718.0, 12.0), (365.0, 718.0, 12.0),
-               (365.0, 305.0, 0.0))
+G1_RW_PYLON = ((215.0, 305.0, 0.0), (270.0, 733.0, 12.0), (365.0, 733.0, 12.0),
+               (365.0, 305.0, 0.0))          # top inside the G1 v4 main plane (Z ~724..741)
 G1_RW_PYLON_Y = (28.0, 43.0)
 # Wing elements along the span (clean-cad W1), fitted inside RV-RW-PROFILES (§25):
 # the lower limit rises from Z 700 (Y <= 100) to Z 750 (Y 575), the top is Z 880, so
 # the stack rises and flattens outboard. (Y, chord scale, main, flap 1, flap 2 angle
-# [deg], main LE Z); 2D margins 4..9 mm, also with the flaps at -25 deg (X-mode).
-G1_RW_SPAN = ((0.0, 1.00, 2.0, 22.0, 45.0, 729.3), (200.0, 1.00, 2.0, 21.0, 42.0, 736.9),
-              (400.0, 0.92, 3.0, 19.0, 37.0, 753.1), (552.0, 0.86, 3.0, 17.0, 33.0, 767.2))
+# [deg], main LE Z). Art. 3.11.1e caps the lower-surface angle in the last 40 mm at
+# 10 / 40 / 65 deg (main / middle / rear): the 6412 main plane at +2 deg reached 22
+# deg (G1 v3), so G1 v4 (2026-10-23) uses a 3309 main plane at -3..-2 deg (7.9..8.9
+# deg) and flaps <= 19 / 43 deg. Z margins 11..22 mm, also with the flaps at -25 deg.
+G1_RW_SPAN = ((0.0, 1.00, -3.0, 19.0, 43.0, 739.9), (200.0, 1.00, -3.0, 19.0, 41.0, 746.1),
+              (400.0, 0.92, -2.0, 18.0, 37.0, 760.3), (552.0, 0.86, -2.0, 17.0, 33.0, 773.2))
+G1_RW_NACA = ((0.03, 0.3, 0.09), (0.06, 0.4, 0.12), (0.06, 0.4, 0.12))   # main, middle, rear
 G1_RW_STATIONS = 9
 
 # Front wing (all [XF, ...]). Everything lies aft of RS-FW-SECTION (§17), the
@@ -299,7 +303,11 @@ G1_DIFF_FENCE_Y = (347.0, 362.0)
 # in RV-FLOOR-FOOT (§5, Z 50..100) that overlaps the outer floor. Slots between the
 # vanes run parallel to the sloping top.
 G1_WB_LE = (760.0, 805.0)                    # leading edge [XF, Y], middle of the band
-G1_WB_YAW = 13.0                             # inward alignment of the band [deg]
+# inward alignment [deg]: Art. 3.5.4c wants the outboard surface >= 10 deg inward
+# beyond 100 mm from the LE and 3.5.4d > 20 deg in the last 100 mm. At 13 deg the
+# 4 % camber left 7.7 deg near 30 % chord (G1 v3); 16 deg is G1 v4 (2026-10-23).
+G1_WB_YAW = 16.0
+G1_WB_NACA = (0.04, 0.4, 0.06)               # vane section: camber bulges outboard
 G1_WB_TOP = ((800.0, 375.0), (1500.0, 200.0))       # §6.3 top plane [XF, Z]; Z <= 375
 G1_WB_TOP_MARGIN = 3.0
 G1_WB_FOOT = ((656.0, 656.0), (656.0, 869.0), (724.0, 869.0), (1291.0, 708.0),
@@ -376,14 +384,22 @@ def _naca4(m, p, t, npts=50):
     return xs, zs
 
 
-def _wing_section(le_x, le_z, chord, angle_deg, y, naca=(0.06, 0.4, 0.12)):
-    """Closed wire of an inverted (downforce) cambered section in the plane Y = y,
-    and its trailing-edge point (X, Z)."""
+def wing_section_points(le_x, le_z, chord, angle_deg, naca=(0.06, 0.4, 0.12)):
+    """(X, Z) of an inverted (downforce) cambered section: the first half runs from
+    the trailing edge along the LOWER (suction) surface to the leading edge, the
+    second half back along the upper surface (the NACA upper side flipped below)."""
     s, h = _naca4(*naca)
     h = -h                                  # camber down -> suction side below
     a = math.radians(angle_deg)             # + = trailing edge up
     X = le_x + chord * (s * math.cos(a) - h * math.sin(a))
     Z = le_z + chord * (s * math.sin(a) + h * math.cos(a))
+    return X, Z
+
+
+def _wing_section(le_x, le_z, chord, angle_deg, y, naca=(0.06, 0.4, 0.12)):
+    """Closed wire of an inverted (downforce) cambered section in the plane Y = y,
+    and its trailing-edge point (X, Z)."""
+    X, Z = wing_section_points(le_x, le_z, chord, angle_deg, naca)
     spline = cq.Edge.makeSpline([V(xi, y, zi) for xi, zi in zip(X, Z)])
     te = cq.Edge.makeLine(V(X[-1], y, Z[-1]), V(X[0], y, Z[0]))
     return cq.Wire.assembleEdges([spline, te]), (float(X[0]), float(Z[0]))
@@ -396,28 +412,29 @@ def _wing_element(le_x, le_z, chord, angle_deg, y0, y1, naca=(0.06, 0.4, 0.12)):
     return solid, te_pt
 
 
-def _wing_layout(le, chords, angles, y0, y1, gap, overlap, flap_delta):
-    """(elements, [(le_x, le_z, chord, angle)]): main plane + flaps, each flap tucked
-    over the previous trailing edge with a closest distance of `gap` (iterated with
-    an exact distance query)."""
+def _wing_layout(le, chords, angles, y0, y1, gap, overlap, flap_delta, nacas=None):
+    """(elements, [(le_x, le_z, chord, angle, naca)]): main plane + flaps, each flap
+    tucked over the previous trailing edge with a closest distance of `gap` (iterated
+    with an exact distance query). `nacas`: section per element (default 6412)."""
+    nacas = nacas or [(0.06, 0.4, 0.12)] * len(chords)
     elems, layout = [], []
     x, z = le
     for i, (c, ang) in enumerate(zip(chords, angles)):
         ang = ang + (flap_delta if i > 0 else 0.0)
         if i == 0:
-            el, te = _wing_element(x, z, c, ang, y0, y1)
+            el, te = _wing_element(x, z, c, ang, y0, y1, nacas[i])
         else:
             x = te[0] - overlap
             z = te[1] + gap
             for _ in range(6):
-                el, new_te = _wing_element(x, z, c, ang, y0, y1)
+                el, new_te = _wing_element(x, z, c, ang, y0, y1, nacas[i])
                 d = elems[-1].distance(el)
                 if abs(d - gap) < 0.05:
                     break
                 z += gap - d
             te = new_te
         elems.append(el)
-        layout.append((x, z, c, ang))
+        layout.append((x, z, c, ang, nacas[i]))
     return elems, layout
 
 
@@ -625,17 +642,7 @@ def body(p: CarParams):
     # and the tail inside RV-TAIL (App.1 §15). One loft avoids a slow boolean.
     spine = _g1_spine(p) if p.geom_level == "G1" else _loft(_spine_sections(p), label="spine")
     # Closed sidepods, inside RV-SIDEPOD + RV-EC (|Y| <= 715, Z <= 600)
-    if p.geom_level == "G1":
-        # deep undercut at the front (the floor stays below an open channel), top
-        # falling towards the rear (downwash), narrow coke-bottle waist
-        pods = [(1040, 300, 330, 430), (1150, 560, 280, 510), (1350, 690, 220, 545),
-                (1800, 670, 150, 520), (2300, 560, 70, 455), (2800, 380, 52, 370),
-                (xr - 100, 170, 60, 300)]
-    else:
-        pods = [(1040, 300, 280, 370), (1120, 560, 150, 470), (1300, 680, 10, 560),
-                (1900, 650, 10, 520), (2500, 520, 10, 430), (3000, 320, 10, 340),
-                (xr - 100, 170, 60, 300)]
-    sidepods = _loft(pods, n=3.5, label="sidepods")
+    sidepods = _loft(sidepod_sections(p), n=3.5, label="sidepods")
     if p.geom_level == "G1":
         # G1: the helmet is its own part (see helmet()); fusing the half helmet into
         # the G1 crease spine left an invalid face (both carry a face on Y = 0)
@@ -730,6 +737,21 @@ def floor_parts_g1(p: CarParams):
     return [low, outer, outer_rear, roof, fence]
 
 
+def sidepod_sections(p: CarParams):
+    """(X, half width, Z bottom, Z top) of the closed sidepod loft (Sidepod + Engine
+    Cover bodywork, App.1 §12-13)."""
+    xr = p.xr
+    if p.geom_level == "G1":
+        # deep undercut at the front (the floor stays below an open channel), top
+        # falling towards the rear (downwash), narrow coke-bottle waist
+        return [(1040, 300, 330, 430), (1150, 560, 280, 510), (1350, 690, 220, 545),
+                (1800, 670, 150, 520), (2300, 560, 70, 455), (2800, 380, 52, 370),
+                (xr - 100, 170, 60, 300)]
+    return [(1040, 300, 280, 370), (1120, 560, 150, 470), (1300, 680, 10, 560),
+            (1900, 650, 10, 520), (2500, 520, 10, 430), (3000, 320, 10, 340),
+            (xr - 100, 170, 60, 300)]
+
+
 def helmet(p: CarParams):
     """G1 helmet as a separate part (Y >= 0, car frame) sitting into the body."""
     return _loft(helmet_sections(p), label="helmet")
@@ -778,7 +800,7 @@ def fw_sweep(p: CarParams, y, soft=10.0):
     return soft * math.log1p(math.exp(need / soft))
 
 
-def span_layouts(table, chords, le_x, span, n, gap, overlap, flap_delta):
+def span_layouts(table, chords, le_x, span, n, gap, overlap, flap_delta, nacas=None):
     """[(y, [(le_x, le_z, chord, angle) per element])] at n cosine-spaced span stations
     (denser at the root and the tip, clean-cad W1). `table` rows are (Y, chord scale,
     main, flap 1, flap 2 angle, main LE Z), PCHIP-interpolated; `le_x(y)` gives the
@@ -791,7 +813,7 @@ def span_layouts(table, chords, le_x, span, n, gap, overlap, flap_delta):
     for y in span / 2 * (1 - np.cos(np.linspace(0.0, np.pi, n))):
         sc, a0, a1, a2, zle = (float(fi(y)) for fi in f)
         _, lay = _wing_layout((le_x(y), zle), [c * sc for c in chords], (a0, a1, a2),
-                              y, y + 1.0, gap, overlap, flap_delta)
+                              y, y + 1.0, gap, overlap, flap_delta, nacas)
         out.append((float(y), lay))
     return out
 
@@ -800,7 +822,7 @@ def _span_elements(layouts, label):
     """One loft per element through its sections at every station of `layouts`."""
     elems = []
     for i in range(len(layouts[0][1])):
-        wires = [_wing_section(*lay[i], y)[0] for y, lay in layouts]
+        wires = [_wing_section(*lay[i][:4], y, lay[i][4])[0] for y, lay in layouts]
         ts = BRepOffsetAPI_ThruSections(True, False, 1e-6)
         ts.SetParType(Approx_Centripetal)
         for w in wires:
@@ -819,7 +841,8 @@ def fw_span_layouts(p: CarParams):
 
 def rw_span_layouts(p: CarParams):
     return span_layouts(G1_RW_SPAN, p.rw_chords, lambda y: p.xr + p.rw_le[0],
-                        p.rw_span_half, G1_RW_STATIONS, p.rw_gap, p.rw_overlap, p.rw_flap_delta)
+                        p.rw_span_half, G1_RW_STATIONS, p.rw_gap, p.rw_overlap, p.rw_flap_delta,
+                        G1_RW_NACA)
 
 
 def _wheel_cut():
@@ -1035,6 +1058,18 @@ def wake_boards(p: CarParams):
     return _fuse(foot, tower, *elems)
 
 
+def floor_board_plan(p: CarParams, npts=40):
+    """Plan section (X, Y) of the floor board vanes: the first half runs from the
+    trailing edge along the OUTBOARD surface (camber bulges outboard) to the leading
+    edge, the second half back along the inboard surface."""
+    yaw = math.radians(G1_WB_YAW)
+    dx, dy = math.cos(yaw), -math.sin(yaw)          # chord direction, towards inboard
+    nx, ny = -dy, dx                                # outboard normal
+    lx, ly = G1_WB_LE
+    s, h = _naca4(*G1_WB_NACA, npts=npts)
+    return lx + p.wb_chord * (s * dx + h * nx), ly + p.wb_chord * (s * dy + h * ny)
+
+
 def floor_boards(p: CarParams):
     """Floor boards in RV-FLOOR-BOARD on a foot in RV-FLOOR-FOOT (G1_WB_* table), Y >= 0,
     car frame: `wb_elements` cambered vertical vanes (same section family as before)
@@ -1042,11 +1077,8 @@ def floor_boards(p: CarParams):
     leading-edge tower, and the foot plate that overlaps the outer floor."""
     yaw = math.radians(G1_WB_YAW)
     dx, dy = math.cos(yaw), -math.sin(yaw)          # chord direction, towards inboard
-    nx, ny = -dy, dx                                # outboard normal
     lx, ly = G1_WB_LE
-    c = p.wb_chord
-    s, h = _naca4(0.04, 0.4, 0.06, npts=40)         # camber bulges outboard
-    X, Y = lx + c * (s * dx + h * nx), ly + c * (s * dy + h * ny)
+    X, Y = floor_board_plan(p)
     z_foot = G1_WB_FOOT_Z[1]
     (xa, za), (xb, zb) = G1_WB_TOP
     top = lambda x: min(za + (x - xa) * (zb - za) / (xb - xa), za) - G1_WB_TOP_MARGIN

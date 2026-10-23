@@ -20,10 +20,55 @@
    - 사이드포드와 Floor Board 간격(3.8.1b): 123 mm로 통과(50 mm 이상)
    - **Floor Board 바깥 면 각도(3.5.4c): 위반.** 앞 100 mm를 뺀 구간이 10° 이상이어야 하는데, 13° 기울기에 캠버가 더해져 최소 7.7°다. 뒤 100 mm(3.5.4d)는 20.5°로 통과한다.
 
+4. **사용자 결정**(명세 §9):
+   - 라이드 하이트를 변수로 넣는다.
+   - 대량 LF 전에 HF 격자 시험을 한다.
+   - 2단계(스크리닝 → 본 DOE)로 진행하고, 시간이 되면 변수나 케이스를 늘린다.
+5. **형상 규칙 자동 검사**(`build_car.py`의 `shape_rule_checks`, G0 외 강제):
+   - 3.10.1h 앞날개 뒷전 아랫면 상승
+   - 3.11.1e 뒷날개 뒷전 아랫면 각도
+   - 3.5.4c, d Floor Board 각도
+   - 3.8.1b 사이드포드와 보드 간격
+   - **정정:** 3번의 뒷날개 6.5°는 틀렸다. 역캠버 단면의 앞쪽 절반이 아랫면인데, 손 계산에서 뒤쪽 절반(윗면)을 읽었다. 실제 G1 v3는 22.1/41.1/64.1°로 **3.11.1e 위반**이었다.
+6. **G1 v4**(규정 위반 수정, 10-21 결정에 따라 묻지 않고 진행):
+   - 뒷날개 주날개를 NACA 3309, −3~−2°로 바꿨다(`G1_RW_NACA`, 요소별 단면 지원). 플랩은 ≤ 19/43°로 했고, Z 높이를 다시 맞췄다(여유 11~22 mm). 기둥 꼭대기는 718 → 733 mm.
+   - Floor Board 기울기 13 → 16°
+   - 결과: G1 v4와 X 모드 모두 검사 107개 OK.
+     뒷전 각도 8.9/38.1/62.1°(X 모드 8.9/13.1/37.1°), 보드 10.7°/23.5°, 사이드포드와 보드 간격 111.7 mm. G0 STL 10개 MD5는 같다.
+   - **뒷날개 하중이 줄 가능성이 크다**(주날개 캠버 6 → 3 %, 받음각 +2 → −3°). G1 v4의 CFD는 아직 없다.
+7. **출처 기록**:
+   - `build_car.py`가 `params.json`에 `source`(커밋, 형상 관련 파일 수정 여부, 명령)를 쓴다.
+   - `make_cfd_case.py`가 이를 `case.json`의 `geometry_params`로 복사한다. 형상 폴더가 덮어써져도 해석의 형상을 되살릴 수 있다.
+
+### 집 PC에서: HF 격자 시험(명세 §6의 0단계)
+목적: G1 v4 코너 모드(zmode)와 직선 모드(xmode)를 L1~L3(가능하면 L4)으로 해석한다.
+HF 격자를 고르고, L1이 두 설계의 차이를 따라가는지(LF 기준 ±10 %) 본다.
+
+1. `git pull` 후 형상을 만든다(각 5분 정도). `params.json`의 `source.dirty`가 false인지 확인한다.
+   ```
+   python scripts/build_car.py --half --fia
+   python scripts/build_car.py --half --fia --fw-flap-delta -10 --rw-flap-delta -25 --name fia2026_xmode
+   ```
+2. WSL 메모리: `%UserProfile%\.wslconfig`에 `[wsl2]`과 `memory=26GB`를 넣고 `wsl --shutdown`을 실행한다.
+3. 준비:
+   ```
+   python scripts/grid_study.py prepare g1v4 --configs zmode=cad/out/fia2026_half xmode=cad/out/fia2026_xmode_half --levels L1 L2 L3 --np L1=6 L2=6 L3=6 --iter 2000 --scheme grid2
+   ```
+4. 실행: 끝난 케이스는 건너뛰므로 끊겨도 같은 명령으로 이어서 돌릴 수 있다.
+   ```
+   python scripts/grid_study.py run-local g1v4 --levels L1 L2     # 첫날 밤
+   python scripts/grid_study.py run-local g1v4 --levels L3        # 둘째 날 밤
+   ```
+   예상 시간: grid2 G0 실측(7.1 코어·초)에 G1 셀 수(약 1.4배)를 곱한 추정이다. 설계 하나에 L1 약 0.7 h, L2 약 1.9 h, L3 약 3.6 h. 두 설계면 첫날 약 5 h, 둘째 날 약 7 h다.
+5. L3 최대 메모리를 `cfd_report.py`로 본다. L4(G1 약 900만 셀, 추정 27 GB 안팎)는 26 GB 안에 들 때만 `prepare g1v4 --add --levels L4 --np L4=6` 후 실행한다.
+6. `python scripts/grid_study.py analyze g1v4`
+   - GCI는 단조 수렴하고 0.5 ≤ p ≤ 3일 때만 유효하다.
+   - L1~L3에서 L1이 점근 범위 밖이면 L4 없이는 HF 판정을 못 할 수 있다. 그 경우 결과를 기록하고 다음 방법을 정한다.
+
 ### 다음 할 일
-- 명세의 변수 목록과 범위 확정(사용자)
-- 형상 규칙 자동 검사 추가, Floor Board 각도 위반 수정(→ G1 v4 여부 결정)
-- Δ 변수 구현(Δ = 0에서 G1 v3 STL과 MD5 동일 확인), 설계 목록 일괄 빌드 스크립트, `case.json`에 커밋 기록
+- 위 HF 격자 시험(집 PC)
+- 회사 PC: G1 v4 grid2 L1(코너 모드) 1회로 v3 대비 변화 확인(사용자 확인 후)
+- Δ 변수 구현(Δ = 0에서 G1 v4 STL과 MD5 동일 확인)과 설계 목록 일괄 빌드 스크립트
 
 ---
 
