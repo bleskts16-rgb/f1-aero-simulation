@@ -964,7 +964,18 @@ def _strut(p0, p1, chord=60.0, thick=18.0, ext=10.0):
 
 
 def ground_to_car(p: CarParams, v):
-    """Inverse of `to_ground` for a single point."""
+    """Inverse of `to_ground` for a single point: undo the ride-height shift, then
+    rotate back by +pitch about Y."""
+    a = math.radians(p.pitch_deg)
+    x, y, z = v.x, v.y, v.z - p.ride_height_front
+    return V(x * math.cos(a) + z * math.sin(a), y, -x * math.sin(a) + z * math.cos(a))
+
+
+def _ground_to_car_g0(p: CarParams, v):
+    """The transform G0 was built with until 2026-10-24: it rotates the same way as
+    `to_ground` instead of back, so points come out 2 * X * sin(pitch) too high in the
+    car frame (100 mm at the rear axle). Kept only so the frozen G0 detail parts
+    (suspension) stay as they were; never use it for new geometry."""
     a = math.radians(p.pitch_deg)
     x, y, z = v.x, v.y, v.z - p.ride_height_front
     return V(x * math.cos(a) - z * math.sin(a), y, x * math.sin(a) + z * math.cos(a))
@@ -993,7 +1004,8 @@ def suspension(p: CarParams):
     ):
         y_in = p.half_width - w                       # tyre inner face
         z_c = d / 2 - p.tyre_squash                   # wheel centre height (ground)
-        ob = {k: ground_to_car(p, V(x0 + dx, y_in + dy, z_c + dz))
+        to_car = _ground_to_car_g0 if p.geom_level == "G0" else ground_to_car   # G0 frozen
+        ob = {k: to_car(p, V(x0 + dx, y_in + dy, z_c + dz))
               for k, (dx, dy, dz) in outboard.items()}
         ib = {k: chassis_point(p, *v) for k, v in inboard.items()}
         members = [_strut(ib["lf"], ob["lower"]), _strut(ib["la"], ob["lower"]),
