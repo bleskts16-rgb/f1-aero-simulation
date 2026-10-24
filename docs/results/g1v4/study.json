@@ -1,0 +1,69 @@
+{
+  "study": "g1v4",
+  "configs": {
+    "zmode": "cad/out/fia2026_half",
+    "xmode": "cad/out/fia2026_xmode_half"
+  },
+  "levels": [
+    "L1",
+    "L2",
+    "L3"
+  ],
+  "iter": 2000,
+  "u": 50.0,
+  "cases": [
+    {
+      "name": "zmode_L1",
+      "config": "zmode",
+      "level": "L1",
+      "np": 6
+    },
+    {
+      "name": "zmode_L2",
+      "config": "zmode",
+      "level": "L2",
+      "np": 6
+    },
+    {
+      "name": "zmode_L3",
+      "config": "zmode",
+      "level": "L3",
+      "np": 6
+    },
+    {
+      "name": "xmode_L1",
+      "config": "xmode",
+      "level": "L1",
+      "np": 6
+    },
+    {
+      "name": "xmode_L2",
+      "config": "xmode",
+      "level": "L2",
+      "np": 6
+    },
+    {
+      "name": "xmode_L3",
+      "config": "xmode",
+      "level": "L3",
+      "np": 6
+    }
+  ],
+  "scheme": "grid2",
+  "nodes": [],
+  "core_cap": 64,
+  "partition": "long",
+  "batches": [
+    {
+      "script": "submit_all.sh",
+      "cases": [
+        "zmode_L1",
+        "zmode_L2",
+        "zmode_L3",
+        "xmode_L1",
+        "xmode_L2",
+        "xmode_L3"
+      ]
+    }
+  ]
+}
