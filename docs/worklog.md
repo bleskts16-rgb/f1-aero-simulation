@@ -4,6 +4,84 @@
 
 ---
 
+## 2026-11-09 오후 (회사 PC): 설계 변수, 표면장 저장, 스크리닝 CFD 시작
+
+### 결정 (사용자)
+- 최종적으로는 설계·세팅을 고르는 에이전트까지 생각한다. 에이전트 학습은 데이터가 쌓인 뒤의 일이라 보류한다.
+- 회사 PC에서 할 수 있는 일은 최대한 회사 PC에서 해서 집 PC 부하를 줄이고, 두 PC를 병렬로 쓴다.
+- **스크리닝 L1 CFD를 집 PC 격자 시험 결과를 기다리지 않고 회사 PC에서 시작한다.** 10-23의 "HF 격자 시험 먼저" 순서를 바꾼 것이다.
+  근거: L1과 L2의 설계 간 차이가 10 % 안이었다(10-24 집 PC). 격자 시험 결과가 나빠도 L1 결과는 다중 충실도의 저충실도 데이터로 남는다.
+- **앞으로 모든 CFD에서 표면 압력과 벽면 전단응력을 저장한다.** 힘과 같은 마지막 1000회 평균이다.
+
+### 한 일
+1. **설계 변수 20개 구현**(다른 세션에서 작업, 이 커밋에 포함)
+   - `cad/car2026.py`의 `CarParams`에 변수 필드를 추가했다. G1에만 적용된다.
+   - `cad/design.py`: 변수 표(ID, 필드, 단위, 범위, 기준)를 둔다.
+   - `build_car.py --set FW1=2`, `scripts/build_designs.py`(목록 일괄 빌드·검사)를 추가했다. 목록은 `data/designs/screening.csv`(41개)다.
+   - `requirements.txt`에서 CadQuery를 2.8.0(OCP 7.9.3.1.1)으로 고정했다.
+   - **기준값 재현**: 변수를 모두 기준으로 두면 G1 `--half --fia` STL 11개와 G0 `--half` STL 5개가 수정 전 코드와 MD5까지 같다.
+     G1 기준 MD5(다른 PC에서 `python scripts/build_car.py --half --fia` 후 `cad/out/fia2026_half`와 비교):
+
+     | STL | MD5 |
+     |---|---|
+     | body | 7aa265c8c0265e900b43833c723f61b4 |
+     | front_wing | db0d18c20cb2a25fed0d47bd1b7a815d |
+     | rear_wing | 77b6cb409dd6b75c1ab31f739612b39d |
+     | wake_boards | bbdcf10593d1b6799320425310ca863c |
+     | helmet | a2053b5e84b0feaf60b6315cb0186247 |
+     | halo | 9218b97b3a9080877bf34351ddd8dda1 |
+     | mirrors | 047fecc413edc4a5da64ddc485f0b167 |
+     | suspension_front | 1460a54271ad028d575083e921b54d5b |
+     | suspension_rear | e0066595038fddd79192c6729a571959 |
+     | wheels_front | 69940865644c8f7ab62509da5fb82020 |
+     | wheels_rear | 27f685203812d3a889ea7e6fb177f0c0 |
+
+     스크리닝의 `base_half`도 위와 같다.
+2. **스크리닝 41개 빌드·규정 검사**: 결과는 [results/designs_screening.md](results/designs_screening.md)에 있다.
+   - 불합격은 모두 기준 볼륨이나 간격 위반이다. 범위 끝값이 규정 밖으로 나간 경우다.
+   - `FB1_lo`와 `FB4_hi`는 기준값과 같아서 STL이 base와 MD5까지 같다. CFD에서 뺀다.
+3. **표면장 저장**(`cfd/templates/car_half/system/controlDict`)
+   - 함수 객체 `wallShearStress`와 `fieldAverage`를 추가했다. `p`와 벽면 전단응력을 힘과 같은 반복 N−999~N에서 평균한다.
+   - `surfaces`(부품별 면 값, 보간 없음)가 마지막에 `postProcessing/surfaces/<시간>/<부품>.vtp`를 쓴다. 해(解)는 바뀌지 않는다.
+   - `scripts/surface_fields.py <케이스>`가 이 파일들을 `surface_fields.npz` 하나로 모은다(float32).
+     - 담는 값: 면 중심, 면적 벡터, 평균 Cp, 평균 Cf 벡터, 마지막 반복 값
+     - 검사: 표면 적분으로 힘을 되살려 힘 함수 객체와 비교한다.
+   - 검증: `g1v4_grid2_L1`(회사)을 30회 이어서 돌리고 마지막 20회를 평균했다.
+     - 부품 11개, 면 141,438개, 6.9 MB
+     - 표면 적분 힘이 모든 부품에서 힘 함수 객체와 상대 3×10⁻⁷ 안에서 같다(전체 CL·A 1.3107, CD·A 0.9972, 그중 마찰 CD·A 0.0547).
+   - 값은 simpleFoam의 운동학적 압력·응력(p/ρ, τ/ρ)이다. `wallShearStress`는 벽이 유체에 주는 응력이라, 차가 받는 마찰력은 −τ다.
+4. **설계 목록 CFD 일괄 실행** `scripts/run_designs_cfd.py`
+   - 검사 OK인 설계만 순서대로 다음을 한다: 케이스 생성 → WSL 메싱·해석 → 표면장 추출·검사.
+   - 결과는 설계마다 `docs/results/cfd_screening_grid2_L1/<id>.json`(커밋 대상)에 쓴다. 두 PC가 목록을 나눠 돌려도 충돌하지 않는다.
+   - 요약은 [results/cfd_screening_grid2_L1.md](results/cfd_screening_grid2_L1.md)다. 실패한 케이스는 기록하고 다음 케이스로 넘어간다.
+5. **회사 PC에서 스크리닝 L1 시작**(11-09 17시, grid2, 4코어, 2000회)
+   - 명령: `python scripts/run_designs_cfd.py data/designs/screening.csv --skip FB1_lo FB4_hi`
+   - 로그: `cfd/runs/screening/run.log`
+   - 회사 PC(i5-4570, 8 GB)는 G1 L1 하나에 약 3.4 h가 걸린다. 합법 설계 약 31개면 약 4.5일이다.
+
+### 두 PC 분담 (제안, 미확정)
+
+| PC | 할 일 |
+|---|---|
+| 회사 (4코어, 8 GB, 쉬지 않고 돌림) | 스크리닝 L1 전부. 범위를 좁힌 끝값의 재빌드와 CFD. 표면장 서로게이트 코드(기준 표면 사영, POD, GP, 교차검증). 대시보드 |
+| 집 (6코어, 32 GB, 밤) | 격자 시험 마무리(L3, 가능하면 L4). 스크리닝 결과가 나온 뒤 고른 몇 개 설계의 L2·L3 보정 해석 |
+
+- v5 서스펜션 영향은 회사 PC 비교로 확인할 수 있다. 스크리닝 `base`(G1 v5 L1)와 `g1v4_grid2_L1`(G1 v4 L1, 같은 회사 PC)을 비교한다.
+  그러면 집 PC에서 v5로 L1·L2를 다시 돌리지 않고, 10-24의 `g1v4` 시험을 L3까지 마치면 된다.
+- 집 PC 순서:
+  1. `git pull`, `pip install -r requirements.txt`(CadQuery 고정 버전)
+  2. 위 MD5 확인(`build_car.py --half --fia`, 약 5분)
+  3. `python scripts/grid_study.py run-local g1v4 --levels L3`(2케이스, 약 7.5 h, 하룻밤)
+  4. `python scripts/grid_study.py analyze g1v4`
+  - 10-24에 미리 만든 L3 케이스는 표면장 저장이 없다. 격자 시험에는 필요 없다.
+
+### 다음 할 일
+- 빌드가 끝나면 불합격 끝값의 범위를 어떻게 좁힐지 정한다(사용자 결정). 정해지면 새 끝값을 빌드하고 CFD 목록에 넣는다.
+- `base`가 끝나면 v4 대 v5 서스펜션 L1 비교를 한다.
+- 스크리닝 결과가 쌓이는 동안 표면장 서로게이트 파이프라인을 만든다.
+
+---
+
 ## 2026-11-09 (회사 PC)
 
 ### 한 일

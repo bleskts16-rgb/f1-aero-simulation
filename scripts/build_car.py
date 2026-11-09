@@ -304,6 +304,68 @@ def git_source():
         return dict(commit=None, dirty=None, command=" ".join(sys.argv[1:]))
 
 
+def build_and_check(p, outdir, half=True, render_png=None, verbose=True):
+    """Build `p`, run the regulation and geometry checks, export STL/STEP and
+    params.json to `outdir`. Returns dict(ok, reg_ok, geo_ok, rows, checks, build_s).
+    A check that fails or could not be computed is not a pass."""
+    from cad import design
+    t0 = time.time()
+    car2026.LOFT_LOG.clear()
+    sprung = sprung_parts(p)
+    ground = build_car(p, sprung, half=True)
+    parts = ground if half else build_car(p, sprung)
+    build_s = time.time() - t0
+    if verbose:
+        print(f"built in {build_s:.1f} s  (rake {p.pitch_deg:.2f} deg)")
+
+    rows = regulation_checks(p, sprung, ground)
+    reg_ok = all(r[3] is not False for r in rows)
+    if verbose:
+        w = max(len(r[0]) for r in rows)
+        print("  -- regulations (tight bounds; '-- ' = information only, not enforced on G0)")
+        for desc, val, lim, ok in rows:
+            val = f"{val:.1f}" if isinstance(val, float) else val
+            mark = "-- " if ok is None else ("OK " if ok else "NG ")
+            print(f"  {mark} {desc:<{w}}  {val:>16}  ({lim})")
+        for name, s in parts.items():
+            bb = _BB(s)
+            print(f"  {name:<13} X {bb.xmin:7.0f}..{bb.xmax:5.0f}  Y {bb.ymin:5.0f}..{bb.ymax:4.0f}  "
+                  f"Z {bb.zmin:4.0f}..{bb.zmax:4.0f} mm")
+
+    export(parts, outdir)
+    # the commit the geometry came from: cad/out is overwritten by later builds, so a
+    # CFD case can only be traced back through this record (make_cfd_case copies it)
+    meta = dict(p.to_dict(), source=git_source())
+    if p.geom_level != "G0":
+        meta["design"] = design.vector(p)              # {ID: value}, docs/design_parameters.md
+    (outdir / "params.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    if verbose:
+        print(f"exported {outdir.relative_to(ROOT)}  (STL in m, STEP in mm)")
+
+    checks = geometry_checks(parts, outdir, half)
+    geo_ok = qa.report(checks, "geometry QA (cad/qa.py)") if verbose else all(c.ok for c in checks)
+
+    if render_png is not None:
+        render(parts, render_png, f"Simplified 2026 F1 car ({outdir.name}) - FIA 2026 Technical "
+                                  f"Regulations Issue 8 dimensions")
+        if verbose:
+            print(f"saved {render_png.relative_to(ROOT)}")
+    return dict(ok=reg_ok and geo_ok, reg_ok=reg_ok, geo_ok=geo_ok, rows=rows, checks=checks,
+                build_s=build_s)
+
+
+def _parse_set(items):
+    """--set NAME=VALUE (design ID such as FW1, or a CarParams field) -> {field: value}."""
+    from cad import design
+    out = {}
+    for item in items or []:
+        name, _, val = item.partition("=")
+        if not val:
+            raise SystemExit(f"--set needs NAME=VALUE, got {item!r}")
+        out[design.resolve(name.strip())] = float(val)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--name", default="baseline")
@@ -323,6 +385,9 @@ def main():
     ap.add_argument("--fia", action="store_true", help="--g1 --details, output name 'fia2026'")
     ap.add_argument("--wb-yaw", type=float,
                     help="G0 wake board inward alignment [deg] (G1 floor boards follow RV-FLOOR-BOARD)")
+    ap.add_argument("--set", action="append", metavar="NAME=VALUE",
+                    help="design variable by ID (FW1 ... RH2, cad/design.py) or CarParams field; "
+                         "repeatable, G1 only")
     ap.add_argument("--no-render", action="store_true")
     args = ap.parse_args()
     args.g1 |= args.fia
@@ -333,6 +398,7 @@ def main():
                               ("fw_flap_delta", args.fw_flap_delta),
                               ("rw_flap_delta", args.rw_flap_delta),
                               ("wb_yaw", args.wb_yaw)) if v is not None}
+    over.update(_parse_set(args.set))
     tags = [t for t, on in (("halo", args.halo), ("susp", args.suspension),
                             ("wb", args.wake_boards), ("mirr", args.mirrors))
             if on or args.details]
@@ -347,44 +413,13 @@ def main():
             args.name = base + ("_detail" if len(tags) == 4 else
                                 "".join("_" + t for t in tags))
 
-    t0 = time.time()
-    car2026.LOFT_LOG.clear()
-    sprung = sprung_parts(p)
-    ground = build_car(p, sprung, half=True)
-    parts = ground if args.half else build_car(p, sprung)
-    print(f"built in {time.time() - t0:.1f} s  (rake {p.pitch_deg:.2f} deg)")
-
-    rows = regulation_checks(p, sprung, ground)
-    reg_ok = all(r[3] is not False for r in rows)
-    w = max(len(r[0]) for r in rows)
-    print("  -- regulations (tight bounds; '-- ' = information only, not enforced on G0)")
-    for desc, val, lim, ok in rows:
-        val = f"{val:.1f}" if isinstance(val, float) else val
-        mark = "-- " if ok is None else ("OK " if ok else "NG ")
-        print(f"  {mark} {desc:<{w}}  {val:>16}  ({lim})")
-
-    for name, s in parts.items():
-        bb = _BB(s)
-        print(f"  {name:<13} X {bb.xmin:7.0f}..{bb.xmax:5.0f}  Y {bb.ymin:5.0f}..{bb.ymax:4.0f}  "
-              f"Z {bb.zmin:4.0f}..{bb.zmax:4.0f} mm")
+    if p.geom_level == "G0" and args.set:
+        raise SystemExit("--set design variables apply to G1 only (add --g1 or --fia)")
 
     outdir = ROOT / "cad" / "out" / (args.name + ("_half" if args.half else ""))
-    export(parts, outdir)
-    # the commit the geometry came from: cad/out is overwritten by later builds, so a
-    # CFD case can only be traced back through this record (make_cfd_case copies it)
-    (outdir / "params.json").write_text(json.dumps(dict(p.to_dict(), source=git_source()), indent=2),
-                                        encoding="utf-8")
-    print(f"exported {outdir.relative_to(ROOT)}  (STL in m, STEP in mm)")
-
-    geo_ok = qa.report(geometry_checks(parts, outdir, args.half), "geometry QA (cad/qa.py)")
-
-    if not args.no_render:
-        fig = ROOT / "docs" / "figures" / f"car2026_{outdir.name}.png"
-        render(parts, fig, f"Simplified 2026 F1 car ({outdir.name}) - FIA 2026 Technical "
-                           f"Regulations Issue 8 dimensions")
-        print(f"saved {fig.relative_to(ROOT)}")
-
-    if not (reg_ok and geo_ok):
+    fig = None if args.no_render else ROOT / "docs" / "figures" / f"car2026_{outdir.name}.png"
+    res = build_and_check(p, outdir, half=args.half, render_png=fig)
+    if not res["ok"]:
         print("FAILED: see NG rows above (a failed check is not a pass)")
         return 1
     return 0

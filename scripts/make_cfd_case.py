@@ -95,6 +95,8 @@ def part_blocks(extra):
         LAYER_PATCHES="(" + "|".join(["body", "front_wing", "rear_wing", "wheels_.*"]
                                      + [n for n in extra if not n.startswith(THIN_PARTS)]) + ")",
         TOTAL_PATCHES=" ".join(base + extra),
+        # one sampled surface per part (face values, no interpolation) for surface_fields.py
+        SURFACE_PATCHES="\n            ".join(f"{n} {{ type patch; patches ({n}); }}" for n in base + extra),
         NOSLIP_PATCHES="(" + "|".join(["body", "front_wing", "rear_wing"] + extra) + ")",
         PV_PARTS=", ".join(f'"{n}"' for n in base + extra),
     )
@@ -150,6 +152,9 @@ def main():
         NU=nu, U_INF=u, RHO=1.2, K_INF=f"{k:.6g}", OMEGA_INF=f"{k / (10 * nu):.6g}",
         XMIN=xmin, XMAX=xmin + xlen, YMAX=ylen, ZMAX=zlen,
         NX=nx, NY=ny, NZ=nz, NP=args.np, N_ITER=args.iter, COFR_X=wb / 2,
+        # surface fields are averaged over the force window: iterations N-999..N, the
+        # same 1000 rows grid_study.case_result averages
+        AVG_START=max(0, args.iter - 999),
         WF_X=0.0, WF_Z=round(rf - sq, 6), WF_OMEGA=f"{-u / rf:.6g}",
         WR_X=wb, WR_Z=round(rr - sq, 6), WR_OMEGA=f"{-u / rr:.6g}",
         ADD_LAYERS="true" if lev["layers"] else "false", N_LAYERS=max(lev["layers"], 1),

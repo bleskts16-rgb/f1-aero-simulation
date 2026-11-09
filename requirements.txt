@@ -4,5 +4,6 @@ matplotlib>=3.8
 pandas>=2.2
 osqp>=1.0
 fastf1>=3.4
-cadquery>=2.5
+cadquery==2.8.0         # pinned: geometry (and STL hashes) must match between PCs while data is collected
+cadquery-ocp==7.9.3.1.1
 pyvista>=0.44

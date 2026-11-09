@@ -14,6 +14,7 @@ F1 셋업 → 파라메트릭 CAD → OpenFOAM → 공력 서로게이트 → QS
 
 ## 실행 환경
 - 파이썬: 저장소의 `.venv` (`pip install -r requirements.txt`, CadQuery 포함).
+  CadQuery는 2.8.0(OCP 7.9.3.1.1)으로 고정했다(2026-11-09). 설계 데이터를 쌓는 동안 두 PC의 형상이 같아야 하므로, 다른 PC에서는 기준 STL MD5가 worklog 11-09 값과 같은지 확인한다.
 - OpenFOAM v2512와 ParaView는 WSL Ubuntu에 있다. `scripts/run_cfd.py`가 케이스를 WSL 홈(`~/f1cfd/`)으로 복사해 돌리고, 로그와 힘만 되가져온다.
   `/mnt/c` 위에서 직접 돌리지 말 것(느림).
 - Git Bash에서 WSL을 부를 때는 스크립트 파일을 만들어 `wsl.exe -e bash <file>`로 실행한다. 명령줄로 넘기면 `$변수`가 바깥에서 먼저 풀린다.
@@ -67,6 +68,8 @@ F1 셋업 → 파라메트릭 CAD → OpenFOAM → 공력 서로게이트 → QS
 python scripts/build_car.py --half                                   # 반쪽 형상 + 규정 점검 (G0 baseline)
 python scripts/build_car.py --half --details                         # 헤일로·서스펜션·웨이크 보드·미러 포함 (G0)
 python scripts/build_car.py --half --fia                             # G1(FIA 렌더 스타일) + 상세 부품 → cad/out/fia2026_half
+python scripts/build_car.py --half --fia --set FW1=2 --set RH1=25 --name x   # 설계 변수(cad/design.py의 ID나 필드명)를 바꾼 G1
+python scripts/build_designs.py data/designs/screening.csv          # 설계 목록 일괄 빌드 + 검사 → docs/results/designs_<목록>.md
 python scripts/render_car.py baseline_half fia2026_half              # pyvista 3D 렌더·비교 → docs/figures/render_*.png
 python scripts/plot_regvol.py [--g0]                                 # 부품과 기준 볼륨 단면 비교 → docs/figures/regvol_sections_*.png
 $env:F1_CAR="fia2026_half"; paraview --script=scripts/pv_car.py      # ParaView로 형상 보기 (PowerShell, 저장소 루트에서)
@@ -76,6 +79,8 @@ python scripts/build_site.py                                         # 대시보
 python scripts/make_cfd_case.py --level L1 --np 4                    # 로컬 케이스
 python scripts/run_cfd.py cfd/runs/baseline_half_L1                  # WSL에서 메싱 + 해석
 python scripts/cfd_report.py cfd/runs/baseline_half_L1 --aref 1.474  # 시간·메모리·CL/CD
+python scripts/surface_fields.py cfd/runs/<케이스>                   # 표면 Cp·Cf(1000회 평균) → surface_fields.npz, 힘과 대조
+python scripts/run_designs_cfd.py data/designs/screening.csv        # 검사 OK 설계를 차례로 L1 해석 → docs/results/cfd_<목록>_grid2_L1/
 python scripts/grid_study.py prepare|push|status|fetch|run-local|analyze <study>   # --scheme grid2 = 바닥 박스 + 고정 첫 층
 python scripts/extract_ttc_reference.py                              # 참고 모델 바닥 수치표 → docs/references/
 ```

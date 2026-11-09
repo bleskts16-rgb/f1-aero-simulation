@@ -99,6 +99,30 @@ class CarParams:
     wb_elements: int = 3
     wb_slot: float = 10.0                    # vertical gap between elements
 
+    # Design variables of the surrogate geometry family (docs/design_parameters.md §4;
+    # IDs, ranges and units in cad/design.py). G1 only: G0 ignores them. The defaults
+    # are G1 v5 and reproduce its STL byte for byte. fw_flap_delta (FW2),
+    # rw_flap_delta (RW2), wb_chord (FB3) and the two ride heights (RH1, RH2) above are
+    # design variables too. Ramps blend with a smoothstep, so the span tables stay smooth.
+    fw_aoa_out: float = 0.0       # FW1 [deg] all three FW elements, full outboard of Y 300, 0 inboard of Y 150
+    fw_twist_tip: float = 0.0     # FW3 [deg] all three FW elements, 0 at Y 450 growing to the tip (Y 670)
+    fw_flap_chord: float = 1.0    # FW4 scale of the two flap chords; the main plane takes up the difference
+    fw_camber: float = 0.06       # FW5 NACA camber m of the three FW sections
+    rw_main_aoa: float = 0.0      # RW1 [deg] main plane
+    rw_tip_rise: float = 0.0      # RW3 [mm] main-plane LE Z, 0 at Y 300 growing to the tip (Y 552)
+    rw_camber: float = 0.06       # RW4 NACA camber m of the two RW flaps (main plane stays 3309)
+    sp_undercut: float = 0.0      # SP1 [mm] sidepod underside Z at X 1150 and 1350 (- = shallower undercut)
+    sp_inlet_top: float = 0.0     # SP2 [mm] sidepod top Z at X 1040 and 1150 (inlet, shoulder)
+    ec_downwash: float = 0.0      # EC1 [mm] engine cover top Z at X 1800 and 2300 (downwash ramp)
+    ec_waist: float = 1.0         # EC2 half-width scale at X 2300 and 2800 (coke-bottle waist)
+    ec_max_width: float = 0.0     # EC3 [mm] half width at X 1350 and 1800
+    # FB1 [deg] floor board inward alignment. Art. 3.5.4c wants the outboard surface
+    # >= 10 deg inward beyond 100 mm from the LE and 3.5.4d > 20 deg in the last 100 mm.
+    # At 13 deg the 4 % camber left 7.7 deg near 30 % chord (G1 v3); 16 deg is G1 v4.
+    fb_yaw: float = 16.0
+    fb_x: float = 760.0           # FB2 [XF mm] floor board LE; its Y follows the RV-FLOOR-BOARD band
+    fb_camber: float = 0.04       # FB4 NACA camber m of the floor board vanes (bulges outboard)
+
     def to_dict(self):
         return asdict(self)
 
@@ -302,12 +326,13 @@ G1_DIFF_FENCE_Y = (347.0, 362.0)
 # leans inboard rearwards, Z 70 up to the §6.3 plane; the vanes stand on a foot plate
 # in RV-FLOOR-FOOT (§5, Z 50..100) that overlaps the outer floor. Slots between the
 # vanes run parallel to the sloping top.
-G1_WB_LE = (760.0, 805.0)                    # leading edge [XF, Y], middle of the band
-# inward alignment [deg]: Art. 3.5.4c wants the outboard surface >= 10 deg inward
-# beyond 100 mm from the LE and 3.5.4d > 20 deg in the last 100 mm. At 13 deg the
-# 4 % camber left 7.7 deg near 30 % chord (G1 v3); 16 deg is G1 v4 (2026-10-23).
-G1_WB_YAW = 16.0
-G1_WB_NACA = (0.04, 0.4, 0.06)               # vane section: camber bulges outboard
+G1_WB_LE = (760.0, 805.0)                    # baseline leading edge [XF, Y], middle of the band
+# (the inward alignment and the camber are CarParams.fb_yaw / fb_camber)
+G1_WB_NACA_PT = (0.4, 0.06)                  # vane section NACA p, t
+# RV-FLOOR-BOARD plan edges (App.1 §6, as cad/regvol.rv_floor_board) [XF, Y]: the band
+# leans inboard rearwards, so a floor board moved along X (fb_x) moves in Y with it
+FB_BAND_OUTER = ((650.0, 875.0), (725.0, 875.0), (1300.0, 715.0), (1500.0, 650.0))
+FB_BAND_INNER = ((650.0, 775.0), (1500.0, 600.0))
 G1_WB_TOP = ((800.0, 375.0), (1500.0, 200.0))       # §6.3 top plane [XF, Z]; Z <= 375
 G1_WB_TOP_MARGIN = 3.0
 G1_WB_FOOT = ((656.0, 656.0), (656.0, 869.0), (724.0, 869.0), (1291.0, 708.0),
@@ -327,6 +352,25 @@ def fw_section_x(y):
     """X of RS-FW-SECTION at |Y| = y (the swept front limit of the front wing)."""
     (x0, y0), (x1, y1) = RS_FW_SECTION
     return x0 + (y - y0) * (x1 - x0) / (y1 - y0)
+
+
+def _ramp(v, v0, v1):
+    """Smoothstep: 0 at v <= v0, 1 at v >= v1, zero slope at both ends."""
+    t = min(max((v - v0) / (v1 - v0), 0.0), 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def fb_band_centre(x):
+    """Y of the RV-FLOOR-BOARD band centre at X = x."""
+    yo = np.interp(x, [q[0] for q in FB_BAND_OUTER], [q[1] for q in FB_BAND_OUTER])
+    yi = np.interp(x, [q[0] for q in FB_BAND_INNER], [q[1] for q in FB_BAND_INNER])
+    return 0.5 * (float(yo) + float(yi))
+
+
+def fb_le(p):
+    """Floor board leading edge [XF, Y]: X = fb_x, Y shifted with the band centre."""
+    x0, y0 = G1_WB_LE
+    return p.fb_x, y0 + (fb_band_centre(p.fb_x) - fb_band_centre(x0))
 
 
 # ---------------------------------------------------------------- primitives
@@ -744,9 +788,17 @@ def sidepod_sections(p: CarParams):
     if p.geom_level == "G1":
         # deep undercut at the front (the floor stays below an open channel), top
         # falling towards the rear (downwash), narrow coke-bottle waist
-        return [(1040, 300, 330, 430), (1150, 560, 280, 510), (1350, 690, 220, 545),
+        base = [(1040, 300, 330, 430), (1150, 560, 280, 510), (1350, 690, 220, 545),
                 (1800, 670, 150, 520), (2300, 560, 70, 455), (2800, 380, 52, 370),
                 (xr - 100, 170, 60, 300)]
+        # design variables SP1, SP2, EC1-EC3 move whole stations (no new sections)
+        d_bot = {1150: p.sp_undercut, 1350: p.sp_undercut}
+        d_top = {1040: p.sp_inlet_top, 1150: p.sp_inlet_top, 1800: p.ec_downwash,
+                 2300: p.ec_downwash}
+        k_wid = {2300: p.ec_waist, 2800: p.ec_waist}
+        d_wid = {1350: p.ec_max_width, 1800: p.ec_max_width}
+        return [(x, a * k_wid.get(x, 1.0) + d_wid.get(x, 0.0), zb + d_bot.get(x, 0.0),
+                 zt + d_top.get(x, 0.0)) for x, a, zb, zt in base]
     return [(1040, 300, 280, 370), (1120, 560, 150, 470), (1300, 680, 10, 560),
             (1900, 650, 10, 520), (2500, 520, 10, 430), (3000, 320, 10, 340),
             (xr - 100, 170, 60, 300)]
@@ -800,19 +852,24 @@ def fw_sweep(p: CarParams, y, soft=10.0):
     return soft * math.log1p(math.exp(need / soft))
 
 
-def span_layouts(table, chords, le_x, span, n, gap, overlap, flap_delta, nacas=None):
+def span_layouts(table, chords, le_x, span, n, gap, overlap, flap_delta, nacas=None,
+                 deform=None):
     """[(y, [(le_x, le_z, chord, angle) per element])] at n cosine-spaced span stations
     (denser at the root and the tip, clean-cad W1). `table` rows are (Y, chord scale,
     main, flap 1, flap 2 angle, main LE Z), PCHIP-interpolated; `le_x(y)` gives the
-    main-plane LE X. Each station is laid out by `_wing_layout`, so every station has
-    the set slot gap."""
+    main-plane LE X. `deform(y, (a0, a1, a2), zle)` returns the angles and LE Z after
+    the design variables. Each station is laid out by `_wing_layout`, so every station
+    has the set slot gap."""
     from scipy.interpolate import PchipInterpolator
     k = np.array(table, dtype=float)
     f = [PchipInterpolator(k[:, 0], k[:, i]) for i in range(1, 6)]
     out = []
     for y in span / 2 * (1 - np.cos(np.linspace(0.0, np.pi, n))):
         sc, a0, a1, a2, zle = (float(fi(y)) for fi in f)
-        _, lay = _wing_layout((le_x(y), zle), [c * sc for c in chords], (a0, a1, a2),
+        angles = (a0, a1, a2)
+        if deform is not None:
+            angles, zle = deform(float(y), angles, zle)
+        _, lay = _wing_layout((le_x(y), zle), [c * sc for c in chords], angles,
                               y, y + 1.0, gap, overlap, flap_delta, nacas)
         out.append((float(y), lay))
     return out
@@ -834,15 +891,32 @@ def _span_elements(layouts, label):
     return elems
 
 
+def fw_chords(p: CarParams):
+    """FW element chords after FW4: the flaps scale by fw_flap_chord and the main plane
+    takes up the difference, so the stack keeps its length in X."""
+    c0, c1, c2 = p.fw_chords
+    k = p.fw_flap_chord
+    return (c0 + (1.0 - k) * (c1 + c2), c1 * k, c2 * k)
+
+
 def fw_span_layouts(p: CarParams):
-    return span_layouts(G1_FW_SPAN, p.fw_chords, lambda y: p.fw_le[0] + fw_sweep(p, y),
-                        FW_SPAN_G1, G1_FW_STATIONS, p.fw_gap, p.fw_overlap, p.fw_flap_delta)
+    def deform(y, angles, zle):                       # FW1 outboard AoA, FW3 tip twist
+        d = p.fw_aoa_out * _ramp(y, 150.0, 300.0) + p.fw_twist_tip * _ramp(y, 450.0, FW_SPAN_G1)
+        return tuple(a + d for a in angles), zle
+    naca = (p.fw_camber, 0.4, 0.12)                   # FW5
+    return span_layouts(G1_FW_SPAN, fw_chords(p), lambda y: p.fw_le[0] + fw_sweep(p, y),
+                        FW_SPAN_G1, G1_FW_STATIONS, p.fw_gap, p.fw_overlap, p.fw_flap_delta,
+                        [naca] * 3, deform)
 
 
 def rw_span_layouts(p: CarParams):
+    def deform(y, angles, zle):                       # RW1 main-plane AoA, RW3 tip rise
+        a0, a1, a2 = angles
+        return (a0 + p.rw_main_aoa, a1, a2), zle + p.rw_tip_rise * _ramp(y, 300.0, p.rw_span_half)
+    flap = (p.rw_camber, 0.4, 0.12)                   # RW4
     return span_layouts(G1_RW_SPAN, p.rw_chords, lambda y: p.xr + p.rw_le[0],
                         p.rw_span_half, G1_RW_STATIONS, p.rw_gap, p.rw_overlap, p.rw_flap_delta,
-                        G1_RW_NACA)
+                        [G1_RW_NACA[0], flap, flap], deform)
 
 
 def _wheel_cut():
@@ -1074,11 +1148,11 @@ def floor_board_plan(p: CarParams, npts=40):
     """Plan section (X, Y) of the floor board vanes: the first half runs from the
     trailing edge along the OUTBOARD surface (camber bulges outboard) to the leading
     edge, the second half back along the inboard surface."""
-    yaw = math.radians(G1_WB_YAW)
+    yaw = math.radians(p.fb_yaw)
     dx, dy = math.cos(yaw), -math.sin(yaw)          # chord direction, towards inboard
     nx, ny = -dy, dx                                # outboard normal
-    lx, ly = G1_WB_LE
-    s, h = _naca4(*G1_WB_NACA, npts=npts)
+    lx, ly = fb_le(p)
+    s, h = _naca4(p.fb_camber, *G1_WB_NACA_PT, npts=npts)
     return lx + p.wb_chord * (s * dx + h * nx), ly + p.wb_chord * (s * dy + h * ny)
 
 
@@ -1087,9 +1161,9 @@ def floor_boards(p: CarParams):
     car frame: `wb_elements` cambered vertical vanes (same section family as before)
     along the inward-leaning band, slots parallel to the sloping §6.3 top, a
     leading-edge tower, and the foot plate that overlaps the outer floor."""
-    yaw = math.radians(G1_WB_YAW)
+    yaw = math.radians(p.fb_yaw)
     dx, dy = math.cos(yaw), -math.sin(yaw)          # chord direction, towards inboard
-    lx, ly = G1_WB_LE
+    lx, ly = fb_le(p)
     X, Y = floor_board_plan(p)
     z_foot = G1_WB_FOOT_Z[1]
     (xa, za), (xb, zb) = G1_WB_TOP

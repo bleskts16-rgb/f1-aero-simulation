@@ -58,6 +58,44 @@ functions
         libs            (utilityFunctionObjects);
         fields          (U p k omega);
     }
+
+    // Surface fields for surface-field surrogates (2026-11-09): wall shear stress and
+    // pressure averaged over the same last-1000-iteration window as the forces, written
+    // once at the end as one surface file per part (postProcessing/surfaces/<time>/).
+    // Kinematic values (p/rho, tau/rho) as simpleFoam solves them; the solution is unchanged.
+    wallShearStress
+    {
+        type            wallShearStress;
+        libs            (fieldFunctionObjects);
+        patches         (@TOTAL_PATCHES@);
+        timeStart       @AVG_START@;
+        writeControl    writeTime;
+    }
+    fieldAverage
+    {
+        type            fieldAverage;
+        libs            (fieldFunctionObjects);
+        timeStart       @AVG_START@;
+        writeControl    writeTime;
+        fields
+        (
+            p               { mean on; prime2Mean off; base iteration; }
+            wallShearStress { mean on; prime2Mean off; base iteration; }
+        );
+    }
+    surfaces
+    {
+        type            surfaces;
+        libs            (sampling);
+        writeControl    writeTime;
+        surfaceFormat   vtk;
+        interpolate     false;
+        fields          (pMean wallShearStressMean p wallShearStress);
+        surfaces
+        {
+            @SURFACE_PATCHES@
+        }
+    }
 }
 
 #remove _forces
