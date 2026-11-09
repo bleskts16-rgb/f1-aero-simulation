@@ -72,6 +72,7 @@ python scripts/plot_regvol.py [--g0]                                 # 부품과
 $env:F1_CAR="fia2026_half"; paraview --script=scripts/pv_car.py      # ParaView로 형상 보기 (PowerShell, 저장소 루트에서)
 python scripts/run_lap_2026.py Monza                                 # 2026 규정 랩 (lapsim/rules2026.py)
 python scripts/aero_sensitivity_2026.py                              # 공력 민감도 → CFD 정확도 목표
+python scripts/build_site.py                                         # 대시보드 데이터 → site/data.js (페이지는 site/index.html)
 python scripts/make_cfd_case.py --level L1 --np 4                    # 로컬 케이스
 python scripts/run_cfd.py cfd/runs/baseline_half_L1                  # WSL에서 메싱 + 해석
 python scripts/cfd_report.py cfd/runs/baseline_half_L1 --aref 1.474  # 시간·메모리·CL/CD

@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026 F1 공력 세팅 탐색기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f6f2;
+  --surface: #fcfcfb;
+  --ink: #1d1d1b;
+  --ink-2: #4a4a46;
+  --ink-3: #7a7a74;
+  --rule: #d8d6cf;
+  --grid: #ebe9e3;
+  --navy: #1f3b73;
+  --navy-soft: #c9d3e8;
+  --red: #b0413e;
+  --red-soft: #f1d3d1;
+  --ok: #2f6b3a;
+  --wait: #8a6d1f;
+  --font: "Noto Serif KR", "Times New Roman", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121211;
+    --surface: #1a1a19;
+    --ink: #ecebe6;
+    --ink-2: #c3c1ba;
+    --ink-3: #8f8d86;
+    --rule: #3a3936;
+    --grid: #262624;
+    --navy: #6a8fdc;
+    --navy-soft: #2a3550;
+    --red: #d8645e;
+    --red-soft: #4a2826;
+    --ok: #7fbf8a;
+    --wait: #d9b35a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121211; --surface: #1a1a19; --ink: #ecebe6; --ink-2: #c3c1ba; --ink-3: #8f8d86;
+  --rule: #3a3936; --grid: #262624; --navy: #6a8fdc; --navy-soft: #2a3550; --red: #d8645e;
+  --red-soft: #4a2826; --ok: #7fbf8a; --wait: #d9b35a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 16px 64px; }
+header h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+header .sub { color: var(--ink-2); margin: 0 0 10px; max-width: 820px; }
+.meta { color: var(--ink-3); font-size: 13px; }
+.meta span + span::before { content: " · "; }
+.tag { display: inline-block; border: 1px solid var(--rule); border-radius: 3px; padding: 0 6px; font-size: 12px; color: var(--ink-2); margin-left: 6px; vertical-align: 2px; }
+section { margin-top: 34px; }
+h2 { font-size: 19px; margin: 0 0 4px; border-bottom: 1px solid var(--rule); padding-bottom: 6px; }
+h2 .num { color: var(--ink-3); font-weight: 400; margin-right: 6px; }
+.lead { color: var(--ink-2); margin: 8px 0 14px; max-width: 860px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; padding: 14px 16px; }
+.card h3 { font-size: 15px; margin: 0 0 2px; }
+.card .cap { color: var(--ink-3); font-size: 12.5px; margin: 0 0 8px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-detail { display: grid; grid-template-columns: 5fr 7fr; gap: 16px; }
+@media (max-width: 860px) { .grid2, .grid-detail { grid-template-columns: 1fr; } }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; align-items: center; }
+.filters .lab { color: var(--ink-3); font-size: 13px; margin-right: 4px; }
+.pill { font-family: var(--font); font-size: 13.5px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); padding: 3px 11px; border-radius: 999px; cursor: pointer; }
+.pill:hover { border-color: var(--ink-3); }
+.pill[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+@media (max-width: 860px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+.tile { background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; padding: 10px 12px; }
+.tile .k { color: var(--ink-3); font-size: 12.5px; }
+.tile .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile .d { color: var(--ink-2); font-size: 12.5px; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { font-family: var(--font); fill: var(--ink-2); font-size: 11px; }
+svg .frame { fill: none; stroke: var(--ink-2); stroke-width: 1; }
+svg .tick { stroke: var(--ink-2); stroke-width: 1; }
+svg .gridl { stroke: var(--grid); stroke-width: 1; }
+svg .zero { stroke: var(--ink-3); stroke-width: 1; }
+svg .axlab { fill: var(--ink-2); font-size: 11.5px; }
+svg .ptlab { fill: var(--ink); font-size: 11.5px; }
+svg .val { fill: var(--ink); font-size: 11px; font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); margin: 2px 0 6px; }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: 4px; margin-right: 5px; border-radius: 2px; }
+.legend i.sq { height: 10px; width: 10px; vertical-align: -1px; }
+.sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 22px; margin: 4px 0 10px; }
+@media (max-width: 600px) { .sliders { grid-template-columns: 1fr; } }
+.sl label { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); }
+.sl label b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+.sl input { width: 100%; accent-color: var(--navy); }
+.presets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.note { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; }
+.steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.steps li { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: baseline; background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; padding: 9px 12px; }
+.st { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.st.done { color: var(--ok); } .st.part { color: var(--wait); } .st.todo { color: var(--ink-3); }
+.steps .t { font-weight: 600; }
+.steps .x { color: var(--ink-2); font-size: 13.5px; }
+details { margin-top: 14px; }
+summary { cursor: pointer; color: var(--ink-2); font-size: 13.5px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+caption { text-align: left; color: var(--ink-2); font-size: 12.5px; padding-bottom: 4px; }
+th, td { padding: 4px 8px; text-align: right; }
+th:first-child, td:first-child { text-align: left; white-space: nowrap; }
+thead th { border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--ink); font-weight: 600; }
+tbody tr:last-child td { border-bottom: 1.5px solid var(--ink); }
+.tableWrap { overflow-x: auto; }
+#tip { position: fixed; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 6px 9px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 2px 8px rgba(0,0,0,.12); display: none; z-index: 10; font-variant-numeric: tabular-nums; }
+footer { margin-top: 40px; color: var(--ink-3); font-size: 12.5px; border-top: 1px solid var(--rule); padding-top: 12px; }
+footer p { margin: 4px 0; }
+.themebtn { float: right; font-family: var(--font); font-size: 12.5px; background: none; border: 1px solid var(--rule); color: var(--ink-2); border-radius: 3px; padding: 2px 8px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <button class="themebtn" id="themeBtn" type="button">밝게/어둡게</button>
+  <h1>2026 F1 공력 세팅 탐색기 <span class="tag">시안</span></h1>
+  <p class="sub">트랙마다 다운포스와 항력 중 무엇이 랩타임에 더 중요한지, 날개와 차체를 바꾸면 어느 트랙에서 얼마나 빨라지는지 보는 페이지입니다. 지금은 2026 규정 랩 시뮬레이션(피팅한 차량)으로 계산한 값이고, CFD 설계 데이터가 쌓이면 그 결과로 바뀝니다.</p>
+  <div class="meta" id="meta"></div>
+</header>
+
+<section id="s1">
+  <h2><span class="num">1</span>트랙 성격: 다운포스형인가, 저항형인가</h2>
+  <p class="lead">가로축은 코너 모드 다운포스(CL·A)를 1 % 늘렸을 때 줄어드는 랩타임, 세로축은 항력(CD·A, 코너·직선 모드 합)을 1 % 늘렸을 때 늘어나는 랩타임입니다. 오른쪽 아래일수록 다운포스를 더 다는 쪽이, 왼쪽 위일수록 항력을 줄이는 쪽이 이득입니다. 점을 누르면 아래 상세가 바뀝니다.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>다운포스 이득 대 항력 손해</h3>
+      <p class="cap">점선: 다운포스 1 %와 항력 1 %의 효과가 같은 선</p>
+      <div id="scatter"></div>
+    </div>
+    <div class="card">
+      <h3>다운포스 1 %를 얻으려고 감수할 수 있는 항력</h3>
+      <p class="cap">이 값보다 항력이 적게 늘면 랩타임이 줄어듭니다(손익분기). 클수록 다운포스형 트랙입니다.</p>
+      <div id="breakeven"></div>
+    </div>
+  </div>
+</section>
+
+<section id="s2">
+  <h2><span class="num">2</span>트랙 상세</h2>
+  <div class="filters" id="trackFilter" role="group" aria-label="트랙 선택"><span class="lab">트랙</span></div>
+  <div style="height:12px"></div>
+  <div class="tiles" id="tiles"></div>
+  <div class="grid-detail">
+    <div class="card">
+      <h3 id="mapTitle">주행선</h3>
+      <div class="legend"><span><i style="background:var(--navy)"></i>코너 모드</span><span><i style="background:var(--red)"></i>직선 모드(날개 눕힘)</span></div>
+      <div id="map"></div>
+    </div>
+    <div class="card">
+      <h3>속도</h3>
+      <div class="legend"><span><i style="background:var(--navy)"></i>속도</span><span><i class="sq" style="background:var(--red-soft)"></i>직선 모드 구간</span></div>
+      <div id="trace"></div>
+      <h3 style="margin-top:14px">공력 값 1 % 증가에 따른 랩타임 변화</h3>
+      <p class="cap">음수는 빨라짐. ±5 % 중앙차분 기울기</p>
+      <div class="legend"><span><i class="sq" style="background:var(--navy)"></i>다운포스(CL·A)</span><span><i class="sq" style="background:var(--red)"></i>항력(CD·A)</span></div>
+      <div id="sens"></div>
+    </div>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="num">3</span>세팅을 바꾸면? (what-if)</h2>
+  <p class="lead">공력 값의 변화량을 정하면 트랙별 랩타임 변화를 계산합니다. 날개를 더 세우는 세팅은 보통 다운포스와 항력이 함께 늘어납니다. 같은 변화가 트랙마다 얼마나 다르게 작용하는지 보는 용도입니다.</p>
+  <div class="card">
+    <div class="presets" id="presets"></div>
+    <div class="sliders" id="sliders"></div>
+    <div class="legend"><span><i class="sq" style="background:var(--navy)"></i>빨라짐</span><span><i class="sq" style="background:var(--red)"></i>느려짐</span></div>
+    <div id="whatif"></div>
+    <p class="note">1차 선형 근사입니다(각 공력 값의 기울기를 더함). 변화가 ±5 %를 넘으면 오차가 커집니다. 나중에는 CFD 데이터로 학습한 서로게이트 모델이 이 자리를 대신해서, 날개 각·라이드 하이트 같은 설계 변수를 직접 움직이게 됩니다.</p>
+  </div>
+</section>
+
+<section id="s4">
+  <h2><span class="num">4</span>앞으로 채울 부분</h2>
+  <p class="lead">최종 목표는 설계·세팅 변수 → CFD → 서로게이트 → 트랙별 최적 세팅을 자동으로 찾는 것입니다. 단계별 상태입니다.</p>
+  <ul class="steps" id="steps"></ul>
+</section>
+
+<details>
+  <summary>모든 수치를 표로 보기</summary>
+  <div class="tableWrap"><table id="table"></table></div>
+</details>
+
+<footer>
+  <p>랩타임: 2026 규정 준정상(QSS) 예선 랩 시뮬레이션. 차량 공력 값은 2026 실제 예선 기록에 맞춰 피팅한 값이며 CFD 결과가 아닙니다.</p>
+  <p>트랙: TUMFTM racetrack-database (LGPL-3.0). 실제 예선 기록: Jolpica-F1 API. 비공식 개인 프로젝트이며 FIA·Formula 1과 관련이 없습니다.</p>
+</footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+"use strict";
+const D = window.SITE_DATA;
+const NS = "http://www.w3.org/2000/svg";
+const tip = document.getElementById("tip");
+const KEYS = [["cla", "코너 모드 다운포스", "down"], ["cda", "코너 모드 항력", "drag"],
+              ["cla_x", "직선 모드 다운포스", "down"], ["cda_x", "직선 모드 항력", "drag"]];
+const NAMES_KO = { Suzuka: "스즈카", Shanghai: "상하이", Montreal: "몬트리올", Spielberg: "슈필베르크",
+  Silverstone: "실버스톤", Budapest: "부다페스트", Spa: "스파", Zandvoort: "잔드보르트", Monza: "몬차" };
+const ko = n => NAMES_KO[n] || n;
+let sel = D.tracks.find(t => t.name === "Suzuka") || D.tracks[0];
+
+// ---------- helpers
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function svgBox(host, w, h) {
+  host.innerHTML = "";
+  return el("svg", { viewBox: `0 0 ${w} ${h}`, role: "img" }, host);
+}
+function lin(d0, d1, r0, r1) { const f = v => r0 + (v - d0) / (d1 - d0) * (r1 - r0); f.inv = p => d0 + (p - r0) / (r1 - r0) * (d1 - d0); return f; }
+function niceTicks(lo, hi, n) {
+  const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+function fmt(v, d) { return (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d); }
+function showTip(html, ev) {
+  tip.innerHTML = html; tip.style.display = "block";
+  const x = ev.clientX + 14, y = ev.clientY + 14, w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(x, innerWidth - w - 8) + "px";
+  tip.style.top = (y + h > innerHeight - 8 ? ev.clientY - h - 10 : y) + "px";
+}
+function hideTip() { tip.style.display = "none"; }
+function color(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+// Boxed axes with inward ticks (left, bottom, right ticks), academic style
+function axes(svg, m, w, h, xs, ys, xt, yt, xlab, ylab, xfmt, yfmt) {
+  const g = el("g", {}, svg);
+  yt.forEach(v => el("line", { x1: m.l, x2: w - m.r, y1: ys(v), y2: ys(v), class: "gridl" }, g));
+  el("rect", { x: m.l, y: m.t, width: w - m.l - m.r, height: h - m.t - m.b, class: "frame" }, g);
+  xt.forEach(v => {
+    el("line", { x1: xs(v), x2: xs(v), y1: h - m.b, y2: h - m.b - 5, class: "tick" }, g);
+    const t = el("text", { x: xs(v), y: h - m.b + 15, "text-anchor": "middle" }, g); t.textContent = xfmt(v);
+  });
+  yt.forEach(v => {
+    el("line", { x1: m.l, x2: m.l + 5, y1: ys(v), y2: ys(v), class: "tick" }, g);
+    el("line", { x1: w - m.r, x2: w - m.r - 5, y1: ys(v), y2: ys(v), class: "tick" }, g);
+    const t = el("text", { x: m.l - 6, y: ys(v) + 4, "text-anchor": "end" }, g); t.textContent = yfmt(v);
+  });
+  if (xlab) { const t = el("text", { x: (m.l + w - m.r) / 2, y: h - 6, "text-anchor": "middle", class: "axlab" }, g); t.textContent = xlab; }
+  if (ylab) { const t = el("text", { x: 14, y: (m.t + h - m.b) / 2, "text-anchor": "middle", class: "axlab", transform: `rotate(-90 14 ${(m.t + h - m.b) / 2})` }, g); t.textContent = ylab; }
+  return g;
+}
+function runs(mask) {             // contiguous index runs [i0, i1] where mask is truthy
+  const out = []; let s = -1;
+  for (let i = 0; i <= mask.length; i++) {
+    const on = i < mask.length && mask[i];
+    if (on && s < 0) s = i;
+    if (!on && s >= 0) { out.push([s, i - 1]); s = -1; }
+  }
+  return out;
+}
+
+// ---------- header
+document.getElementById("meta").innerHTML =
+  `<span>트랙 ${D.tracks.length}개</span><span>생성 ${D.generated}</span>` +
+  (D.commit ? `<span>커밋 ${D.commit}</span>` : "") +
+  `<span>피팅 차량 CL·A ${D.car.cla.toFixed(2)} / CD·A ${D.car.cda.toFixed(2)} m² (코너 모드), 실제 예선 대비 RMS ${D.car.rms_lap_error_s.toFixed(2)} s</span>`;
+
+// ---------- 1. scatter
+function drawScatter() {
+  const W = 520, H = 380, m = { l: 58, r: 16, t: 14, b: 44 };
+  const svg = svgBox(document.getElementById("scatter"), W, H);
+  const pts = D.tracks.map(t => ({ t, x: -t.s_per_pct.cla, y: t.s_per_pct.cda + t.s_per_pct.cda_x }));
+  const xmax = Math.max(...pts.map(p => p.x)) * 1.18, ymax = Math.max(...pts.map(p => p.y)) * 1.18;
+  const xmin = Math.min(...pts.map(p => p.x)) * 0.75, ymin = Math.min(...pts.map(p => p.y)) * 0.75;
+  const lo = Math.min(xmin, ymin), hi = Math.max(xmax, ymax);
+  const xs = lin(lo, hi, m.l, W - m.r), ys = lin(lo, hi, H - m.b, m.t);
+  const tk = niceTicks(lo, hi, 5);
+  axes(svg, m, W, H, xs, ys, tk, tk, "다운포스 +1 %의 랩타임 이득 [s]", "항력 +1 %의 랩타임 손해 [s]", v => v.toFixed(2), v => v.toFixed(2));
+  el("line", { x1: xs(lo), y1: ys(lo), x2: xs(hi), y2: ys(hi), stroke: color("--ink-3"), "stroke-dasharray": "4 4", "stroke-width": 1 }, svg);
+  const tl = el("text", { x: m.l + 6, y: m.t + 14, "text-anchor": "start", class: "axlab" }, svg); tl.textContent = "↖ 저항형";
+  const tr = el("text", { x: xs(hi) - 6, y: H - m.b - 8, "text-anchor": "end", class: "axlab" }, svg); tr.textContent = "다운포스형 ↘";
+  // label placement: first candidate offset that hits no other label, point or note
+  const boxes = [{ x0: m.l, x1: m.l + 70, y0: m.t, y1: m.t + 20 }, { x0: xs(hi) - 90, x1: xs(hi), y0: H - m.b - 22, y1: H - m.b }]
+    .concat(pts.map(p => ({ x0: xs(p.x) - 7, x1: xs(p.x) + 7, y0: ys(p.y) - 7, y1: ys(p.y) + 7 })));
+  const hit = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+  pts.forEach(p => {
+    const cx = xs(p.x), cy = ys(p.y), w = ko(p.t.name).length * 12, h = 13;
+    const cand = [[cx + 9, cy + 4, "start"], [cx - 9, cy + 4, "end"], [cx, cy - 10, "middle"], [cx, cy + 19, "middle"],
+                  [cx + 7, cy - 8, "start"], [cx + 7, cy + 16, "start"], [cx - 7, cy - 8, "end"], [cx - 7, cy + 16, "end"]];
+    p.lab = cand[0];
+    for (const c of cand) {
+      const x0 = c[2] === "start" ? c[0] : c[2] === "end" ? c[0] - w : c[0] - w / 2;
+      const b = { x0, x1: x0 + w, y0: c[1] - h + 2, y1: c[1] + 3 };
+      if (b.x0 < m.l + 2 || b.x1 > W - m.r - 2 || b.y0 < m.t + 2 || b.y1 > H - m.b - 2) continue;
+      if (boxes.some(o => hit(o, b))) continue;
+      p.lab = c; boxes.push(b); break;
+    }
+  });
+  pts.forEach(p => {
+    const isSel = p.t === sel;
+    const g = el("g", { style: "cursor:pointer" }, svg);
+    el("circle", { cx: xs(p.x), cy: ys(p.y), r: 14, fill: "transparent" }, g);
+    el("circle", { cx: xs(p.x), cy: ys(p.y), r: isSel ? 7 : 5, fill: isSel ? color("--red") : color("--navy"), stroke: color("--surface"), "stroke-width": 2 }, g);
+    const lab = el("text", { x: p.lab[0], y: p.lab[1], "text-anchor": p.lab[2], class: "ptlab", "font-weight": isSel ? 700 : 400 }, g);
+    lab.textContent = ko(p.t.name);
+    g.addEventListener("mousemove", ev => showTip(`<b>${ko(p.t.name)}</b><br>다운포스 +1 %: ${fmt(p.t.s_per_pct.cla, 3)} s<br>항력 +1 %: ${fmt(p.y, 3)} s<br>손익분기: 항력 ${p.t.breakeven_drag_pct.toFixed(2)} %`, ev));
+    g.addEventListener("mouseleave", hideTip);
+    g.addEventListener("click", () => select(p.t));
+  });
+}
+
+// horizontal bars helper
+function hbars(host, rows, opts) {
+  // drawn at the host's real pixel width, so the text stays at its set size on any screen
+  const W = Math.max(320, host.clientWidth || opts.W || 520), rowH = opts.rowH || 26, m = { l: opts.left || 92, r: 54, t: 6, b: 34 };
+  const H = m.t + m.b + rows.length * rowH;
+  const svg = svgBox(host, W, H);
+  const vals = rows.map(r => r.v);
+  let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+  const pad = (hi - lo) * 0.08 || 1; lo = lo < 0 ? lo - pad : 0; hi = hi > 0 ? hi + pad : 0;
+  const xs = lin(lo, hi, m.l, W - m.r);
+  const tk = niceTicks(lo, hi, 5);
+  const g = el("g", {}, svg);
+  tk.forEach(v => el("line", { x1: xs(v), x2: xs(v), y1: m.t, y2: H - m.b, class: "gridl" }, g));
+  el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, class: "frame" }, g);
+  tk.forEach(v => {
+    el("line", { x1: xs(v), x2: xs(v), y1: H - m.b, y2: H - m.b - 5, class: "tick" }, g);
+    const t = el("text", { x: xs(v), y: H - m.b + 15, "text-anchor": "middle" }, g); t.textContent = opts.tickFmt(v);
+  });
+  if (lo < 0 && hi > 0) el("line", { x1: xs(0), x2: xs(0), y1: m.t, y2: H - m.b, class: "zero" }, g);
+  const t = el("text", { x: (m.l + W - m.r) / 2, y: H - 4, "text-anchor": "middle", class: "axlab" }, g); t.textContent = opts.xlab;
+  rows.forEach((r, i) => {
+    const y = m.t + i * rowH + rowH * 0.2, bh = rowH * 0.6;
+    const x0 = xs(Math.min(0, r.v)), x1 = xs(Math.max(0, r.v));
+    const gg = el("g", {}, svg);
+    el("rect", { x: m.l, y: m.t + i * rowH, width: W - m.l - m.r, height: rowH, fill: "transparent" }, gg);
+    el("rect", { x: x0, y, width: Math.max(1, x1 - x0), height: bh, rx: 2, fill: r.color, opacity: r.dim ? 0.45 : 1 }, gg);
+    const lab = el("text", { x: m.l - 7, y: y + bh / 2 + 4, "text-anchor": "end", class: "ptlab", "font-weight": r.bold ? 700 : 400 }, gg); lab.textContent = r.label;
+    // value at the bar end; a negative bar's label goes inside it when it would reach the category labels
+    const txt = opts.valFmt(r.v), tw = txt.length * 6.6;
+    const inside = r.v < 0 && x0 - 5 - tw < m.l + 2;
+    const vx = r.v >= 0 ? x1 + 5 : inside ? x0 + 5 : x0 - 5;
+    const vl = el("text", { x: vx, y: y + bh / 2 + 4, "text-anchor": r.v >= 0 || inside ? "start" : "end", class: "val" }, gg);
+    if (inside) vl.style.fill = color("--surface");
+    vl.textContent = txt;
+    if (r.tip) { gg.addEventListener("mousemove", ev => showTip(r.tip, ev)); gg.addEventListener("mouseleave", hideTip); }
+    if (r.onclick) { gg.style.cursor = "pointer"; gg.addEventListener("click", r.onclick); }
+  });
+}
+
+function drawBreakeven() {
+  const rows = [...D.tracks].sort((a, b) => b.breakeven_drag_pct - a.breakeven_drag_pct).map(t => ({
+    label: ko(t.name), v: t.breakeven_drag_pct, color: color("--navy"), bold: t === sel, dim: t !== sel,
+    tip: `<b>${ko(t.name)}</b><br>다운포스 1 %를 위해 항력 ${t.breakeven_drag_pct.toFixed(2)} %까지 감수 가능`,
+    onclick: () => select(t) }));
+  hbars(document.getElementById("breakeven"), rows, { xlab: "감수할 수 있는 항력 증가 [%]", tickFmt: v => v.toFixed(1), valFmt: v => v.toFixed(2) + " %", rowH: 30 });
+}
+
+// ---------- 2. detail
+function drawFilter() {
+  const host = document.getElementById("trackFilter");
+  host.querySelectorAll("button").forEach(b => b.remove());
+  D.tracks.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "pill"; b.type = "button"; b.textContent = ko(t.name);
+    b.setAttribute("aria-pressed", t === sel ? "true" : "false");
+    b.addEventListener("click", () => select(t));
+    host.appendChild(b);
+  });
+}
+function drawTiles() {
+  const t = sel, real = t.lap_real_2026_s;
+  const mmss = s => `${Math.floor(s / 60)}:${(s % 60).toFixed(3).padStart(6, "0")}`;
+  const tiles = [
+    ["시뮬 예선 랩", mmss(t.lap_sim_s), real ? `실제 2026 예선 ${mmss(real)} (${fmt(t.lap_sim_s - real, 2)} s)` : ""],
+    ["직선 모드 비율", (100 * t.x_mode_share).toFixed(0) + " %", `랩 거리 ${(t.length_m / 1000).toFixed(2)} km 중`],
+    ["속도 범위", `${t.v_min_kmh.toFixed(0)}–${t.v_max_kmh.toFixed(0)}`, "km/h (최저–최고)"],
+    ["손익분기", t.breakeven_drag_pct.toFixed(2) + " %", "다운포스 1 %당 감수할 수 있는 항력"],
+  ];
+  document.getElementById("tiles").innerHTML = tiles.map(([k, v, d]) =>
+    `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+}
+
+let mapDot = null, mapProj = null, traceDot = null, traceCross = null, traceProj = null;
+function syncAt(i) {
+  const L = sel.line;
+  if (mapDot) { mapDot.setAttribute("cx", mapProj.x(L.x[i])); mapDot.setAttribute("cy", mapProj.y(L.y[i])); mapDot.style.display = ""; }
+  if (traceDot) {
+    const x = traceProj.x(L.s[i] / 1000), y = traceProj.y(L.v[i]);
+    traceDot.setAttribute("cx", x); traceDot.setAttribute("cy", y); traceDot.style.display = "";
+    traceCross.setAttribute("x1", x); traceCross.setAttribute("x2", x); traceCross.style.display = "";
+  }
+}
+function unsync() { [mapDot, traceDot, traceCross].forEach(e => e && (e.style.display = "none")); hideTip(); }
+function tipAt(i, ev) {
+  const L = sel.line;
+  showTip(`${(L.s[i] / 1000).toFixed(2)} km<br><b>${L.v[i].toFixed(0)} km/h</b><br>${L.xm[i] ? "직선 모드" : "코너 모드"}`, ev);
+}
+
+function drawMap() {
+  const L = sel.line, W = 460, pad = 16;
+  document.getElementById("mapTitle").textContent = `${ko(sel.name)} 주행선`;
+  const xr = Math.max(...L.x), yr = Math.max(...L.y);
+  const H = Math.round(Math.min(520, Math.max(260, (W - 2 * pad) * yr / xr + 2 * pad)));
+  const svg = svgBox(document.getElementById("map"), W, H);
+  const k = Math.min((W - 2 * pad) / xr, (H - 2 * pad) / yr);
+  const ox = (W - k * xr) / 2, oy = (H - k * yr) / 2;
+  mapProj = { x: v => ox + k * v, y: v => H - oy - k * v };
+  const path = (i0, i1) => { let d = ""; for (let i = i0; i <= i1; i++) d += (i === i0 ? "M" : "L") + mapProj.x(L.x[i]).toFixed(1) + " " + mapProj.y(L.y[i]).toFixed(1); return d; };
+  const n = L.x.length;
+  el("path", { d: path(0, n - 1) + "Z", fill: "none", stroke: color("--navy"), "stroke-width": 3, "stroke-linejoin": "round" }, svg);
+  runs(L.xm).forEach(([a, b]) => el("path", { d: path(Math.max(0, a - 1), Math.min(n - 1, b + 1)), fill: "none", stroke: color("--red"), "stroke-width": 3.5, "stroke-linecap": "round" }, svg));
+  // start / finish and direction
+  const sx = mapProj.x(L.x[0]), sy = mapProj.y(L.y[0]);
+  const dx = mapProj.x(L.x[3]) - sx, dy = mapProj.y(L.y[3]) - sy, dl = Math.hypot(dx, dy) || 1;
+  el("line", { x1: sx - 8 * dy / dl, y1: sy + 8 * dx / dl, x2: sx + 8 * dy / dl, y2: sy - 8 * dx / dl, stroke: color("--ink"), "stroke-width": 2.5 }, svg);
+  // arrowhead along the direction of travel, "출발" on the side away from the track's centre
+  const ux = dx / dl, uy = dy / dl, ax = sx + ux * 16, ay = sy + uy * 16;
+  el("path", { d: `M${ax + ux * 7} ${ay + uy * 7} L${ax - uy * 5} ${ay + ux * 5} L${ax + uy * 5} ${ay - ux * 5} Z`, fill: color("--ink") }, svg);
+  const mx = L.x.reduce((a, b) => a + b, 0) / n, my = L.y.reduce((a, b) => a + b, 0) / n;
+  const side = ((sx - mapProj.x(mx)) * -uy + (sy - mapProj.y(my)) * ux) >= 0 ? 1 : -1;
+  const lx = sx - uy * 20 * side, ly = sy + ux * 20 * side;
+  const st = el("text", { x: lx, y: ly + 4, "text-anchor": Math.abs(uy) > 0.5 ? (lx < sx ? "end" : "start") : "middle", class: "val" }, svg);
+  st.textContent = "출발";
+  mapDot = el("circle", { r: 6, fill: color("--surface"), stroke: color("--ink"), "stroke-width": 2, style: "display:none" }, svg);
+  const hit = el("rect", { x: 0, y: 0, width: W, height: H, fill: "transparent" }, svg);
+  hit.addEventListener("mousemove", ev => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width, py = (ev.clientY - r.top) * H / r.height;
+    let best = 0, bd = Infinity;
+    for (let i = 0; i < n; i++) { const d = (mapProj.x(L.x[i]) - px) ** 2 + (mapProj.y(L.y[i]) - py) ** 2; if (d < bd) { bd = d; best = i; } }
+    if (bd > 900) { unsync(); return; }
+    syncAt(best); tipAt(best, ev);
+  });
+  hit.addEventListener("mouseleave", unsync);
+}
+
+function drawTrace() {
+  const L = sel.line, W = 640, H = 250, m = { l: 50, r: 14, t: 10, b: 40 };
+  const svg = svgBox(document.getElementById("trace"), W, H);
+  const smax = L.s[L.s.length - 1] / 1000, vmax = Math.ceil(Math.max(...L.v) / 50) * 50;
+  const xs = lin(0, smax, m.l, W - m.r), ys = lin(0, vmax, H - m.b, m.t);
+  traceProj = { x: xs, y: ys };
+  runs(L.xm).forEach(([a, b]) => el("rect", { x: xs(L.s[a] / 1000), y: m.t, width: Math.max(1, xs(L.s[b] / 1000) - xs(L.s[a] / 1000)), height: H - m.t - m.b, fill: color("--red-soft") }, svg));
+  axes(svg, m, W, H, xs, ys, niceTicks(0, smax, 6), niceTicks(0, vmax, 5), "거리 [km]", "속도 [km/h]", v => v.toFixed(v % 1 ? 1 : 0), v => v.toFixed(0));
+  let d = ""; L.s.forEach((s, i) => d += (i ? "L" : "M") + xs(s / 1000).toFixed(1) + " " + ys(L.v[i]).toFixed(1));
+  el("path", { d, fill: "none", stroke: color("--navy"), "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+  traceCross = el("line", { y1: m.t, y2: H - m.b, stroke: color("--ink-3"), "stroke-width": 1, style: "display:none" }, svg);
+  traceDot = el("circle", { r: 4.5, fill: color("--navy"), stroke: color("--surface"), "stroke-width": 2, style: "display:none" }, svg);
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+  hit.addEventListener("mousemove", ev => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width;
+    const s = xs.inv(px) * 1000;
+    let i = Math.round(s / (L.s[1] - L.s[0])); i = Math.max(0, Math.min(L.s.length - 1, i));
+    syncAt(i); tipAt(i, ev);
+  });
+  hit.addEventListener("mouseleave", unsync);
+}
+
+function drawSens() {
+  const rows = KEYS.map(([k, lab, kind]) => ({ label: lab, v: sel.s_per_pct[k], color: kind === "down" ? color("--navy") : color("--red"),
+    tip: `<b>${lab}</b> +1 %<br>랩타임 ${fmt(sel.s_per_pct[k], 4)} s` }));
+  hbars(document.getElementById("sens"), rows, { xlab: "랩타임 변화 [s]", tickFmt: v => v.toFixed(2), valFmt: v => fmt(v, 3) + " s", left: 122, rowH: 28 });
+}
+
+// ---------- 3. what-if
+const SL = [["cla", "코너 모드 다운포스 CL·A"], ["cda", "코너 모드 항력 CD·A"], ["cla_x", "직선 모드 다운포스 CL·A"], ["cda_x", "직선 모드 항력 CD·A"]];
+const PRESETS = [
+  ["기본", { cla: 0, cda: 0, cla_x: 0, cda_x: 0 }],
+  ["고다운포스 날개", { cla: 5, cda: 3, cla_x: 2, cda_x: 2 }],
+  ["저항 감소 날개", { cla: -3, cda: -4, cla_x: -1, cda_x: -3 }],
+  ["차체 효율 개선", { cla: 2, cda: -1, cla_x: 1, cda_x: -1 }],
+];
+const delta = { cla: 5, cda: 3, cla_x: 2, cda_x: 2 };
+function drawSliders() {
+  const host = document.getElementById("sliders");
+  host.innerHTML = SL.map(([k, lab]) => `<div class="sl"><label for="sl_${k}">${lab}<b id="v_${k}"></b></label><input type="range" id="sl_${k}" min="-10" max="10" step="0.5" value="${delta[k]}"></div>`).join("");
+  SL.forEach(([k]) => {
+    const inp = document.getElementById("sl_" + k);
+    inp.addEventListener("input", () => { delta[k] = +inp.value; updateWhatif(); });
+  });
+  const ph = document.getElementById("presets");
+  ph.innerHTML = "";
+  PRESETS.forEach(([lab, v]) => {
+    const b = document.createElement("button"); b.className = "pill"; b.type = "button"; b.textContent = lab;
+    b.addEventListener("click", () => { Object.assign(delta, v); SL.forEach(([k]) => document.getElementById("sl_" + k).value = v[k]); updateWhatif(); });
+    ph.appendChild(b);
+  });
+}
+function updateWhatif() {
+  SL.forEach(([k]) => document.getElementById("v_" + k).textContent = fmt(delta[k], 1) + " %");
+  const res = D.tracks.map(t => ({ t, dt: SL.reduce((s, [k]) => s + t.s_per_pct[k] * delta[k], 0) }));
+  res.sort((a, b) => a.dt - b.dt);
+  const rows = res.map(r => ({ label: ko(r.t.name), v: r.dt, color: r.dt <= 0 ? color("--navy") : color("--red"), bold: r.t === sel,
+    tip: `<b>${ko(r.t.name)}</b><br>랩타임 ${fmt(r.dt, 3)} s<br>` + SL.map(([k, lab]) => `${lab}: ${fmt(r.t.s_per_pct[k] * delta[k], 3)} s`).join("<br>"),
+    onclick: () => select(r.t) }));
+  hbars(document.getElementById("whatif"), rows, { xlab: "랩타임 변화 [s] (음수 = 빨라짐)", tickFmt: v => v.toFixed(2), valFmt: v => fmt(v, 3) + " s", rowH: 26, W: 1060 });
+}
+
+// ---------- 4. roadmap
+const STEPS = [
+  ["done", "완료", "랩 시뮬레이션과 트랙별 민감도", "2026 규정(코너/직선 모드, 에너지 한도)으로 예선 랩 계산. 이 페이지의 모든 수치"],
+  ["done", "완료", "규정을 지키는 파라메트릭 CAD (G1)", "기준 볼륨·형상 규칙 107개 자동 검사"],
+  ["part", "진행 중", "CFD 격자 검증", `기준 차량 ${D.cfd_reference.geometry} ${D.cfd_reference.grid}: 코너 모드 CL·A ${D.cfd_reference.zmode.cla.toFixed(2)}, CD·A ${D.cfd_reference.zmode.cda.toFixed(2)} m². 설계 간 차이는 거친 격자에서도 10 % 안에서 유지`],
+  ["todo", "대기", "설계 변수 구현", "날개 각·캠버, 사이드포드·엔진커버, 플로어 보드, 라이드 하이트 등 22개 후보를 형상에 반영"],
+  ["todo", "대기", "스크리닝과 데이터 쌓기", "효과가 큰 변수 6~8개를 골라 CFD 데이터셋 구축"],
+  ["todo", "대기", "서로게이트와 최적화 루프", "가우시안 프로세스로 공력 예측, 베이지안 최적화로 다음 해석점 추천"],
+  ["todo", "대기", "트랙별 최적 세팅", "공력 밸런스를 랩 시뮬에 추가하고, 차체는 시즌 하나·날개와 라이드 하이트는 트랙마다 최적화"],
+];
+document.getElementById("steps").innerHTML = STEPS.map(([c, s, t, x]) =>
+  `<li><span class="st ${c}">${c === "done" ? "✓" : c === "part" ? "◐" : "○"} ${s}</span><div><div class="t">${t}</div><div class="x">${x}</div></div></li>`).join("");
+
+// ---------- table view
+function drawTable() {
+  const head = ["트랙", "길이 [km]", "시뮬 랩 [s]", "실제 2026 [s]", "직선 모드 [%]"].concat(KEYS.map(k => k[1] + " +1 % [s]")).concat(["손익분기 항력 [%]"]);
+  const body = D.tracks.map(t => [ko(t.name), (t.length_m / 1000).toFixed(3), t.lap_sim_s.toFixed(3), t.lap_real_2026_s ? t.lap_real_2026_s.toFixed(3) : "–",
+    (100 * t.x_mode_share).toFixed(1)].concat(KEYS.map(k => fmt(t.s_per_pct[k[0]], 4))).concat([t.breakeven_drag_pct.toFixed(2)]));
+  document.getElementById("table").innerHTML = `<caption>표 1. 트랙별 예선 랩과 공력 민감도 (피팅 차량, ±${(100 * D.sensitivity_step).toFixed(0)} % 중앙차분)</caption>` +
+    `<thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>` +
+    body.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("") + "</tbody>";
+}
+
+// ---------- wiring
+function select(t) { sel = t; drawAll(); }
+function drawAll() {
+  hideTip();
+  drawScatter(); drawBreakeven(); drawFilter(); drawTiles(); drawMap(); drawTrace(); drawSens(); updateWhatif();
+}
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  drawAll();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+let resizeTimer = null, lastW = innerWidth;
+addEventListener("resize", () => {
+  if (innerWidth === lastW) return;
+  lastW = innerWidth; clearTimeout(resizeTimer); resizeTimer = setTimeout(drawAll, 150);
+});
+drawSliders(); drawTable(); drawAll();
+})();
+</script>
+</body>
+</html>
