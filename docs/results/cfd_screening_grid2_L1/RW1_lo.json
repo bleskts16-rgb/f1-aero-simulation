@@ -1,0 +1,85 @@
+{
+  "id": "RW1_lo",
+  "values": {
+    "RW1": -3.0
+  },
+  "status": "done",
+  "note": "",
+  "case": "cfd/runs/screening/RW1_lo_grid2_L1",
+  "level": "L1",
+  "scheme": "grid2",
+  "iterations": 2000,
+  "np": 4,
+  "u_inf": 50.0,
+  "geometry": "cad/out/screening/RW1_lo_half",
+  "stl_md5": "9052a1c3f901",
+  "commit": "c2ec16a",
+  "cells": 1282894,
+  "iters": 2000,
+  "minutes": {
+    "surfaceFeatureExtract": 0.0,
+    "blockMesh": 0.0,
+    "decomposePar": 0.0,
+    "snappyHexMesh": 14.3,
+    "checkMesh": 0.1,
+    "potentialFoam": 0.3,
+    "simpleFoam": 148.3
+  },
+  "yplus": {
+    "ground": 681.5508,
+    "body": 100.1687,
+    "front_wing": 44.1792,
+    "rear_wing": 61.26412,
+    "wheels_front": 182.5793,
+    "wheels_rear": 155.8883,
+    "halo": 191.892,
+    "helmet": 86.62081,
+    "mirrors": 228.8321,
+    "suspension_front": 532.4949,
+    "suspension_rear": 766.5399,
+    "wake_boards": 74.58446
+  },
+  "forces": {
+    "total": {
+      "cla": 1.25335,
+      "cda": 0.98003,
+      "cla_band": 0.16993,
+      "cda_band": 0.08949,
+      "cla_se": 0.0045,
+      "cda_se": 0.002
+    },
+    "front_wing": {
+      "cla": 0.89724,
+      "cda": 0.11022,
+      "cla_band": 0.03529,
+      "cda_band": 0.00645,
+      "cla_se": 0.00093,
+      "cda_se": 0.0002
+    },
+    "body": {
+      "cla": 0.12872,
+      "cda": 0.24804,
+      "cla_band": 0.14933,
+      "cda_band": 0.02324,
+      "cla_se": 0.00363,
+      "cda_se": 0.00066
+    },
+    "rear_wing": {
+      "cla": 0.62847,
+      "cda": 0.13483,
+      "cla_band": 0.04039,
+      "cda_band": 0.00861,
+      "cla_se": 0.0013,
+      "cda_se": 0.00024
+    },
+    "wheels": {
+      "cla": -0.38016,
+      "cda": 0.35721,
+      "cla_band": 0.05683,
+      "cda_band": 0.08455,
+      "cla_se": 0.0015,
+      "cda_se": 0.00196
+    }
+  },
+  "peak_mem_gb": 3.0
+}

@@ -1,7 +1,7 @@
 # 설계 목록 빌드 검사: screening
 
 - 목록: `data/designs/screening.csv` (41개), 형상: `cad/out/screening/<id>_half`
-- 커밋: c2ec16a (작업 트리 변경 있음)
+- 커밋: c2ec16a (작업 트리 변경 있음), e4b29b4
 - 판정: 규정 검사(기준 볼륨, 슬롯, 덮음, 형상 규칙, 바퀴 간극)와 형상 QA(로프트 이탈, 양의 부피, 부착, STL 닫힘)를 모두 통과하면 OK. 계산 실패(ERROR)는 통과가 아니다.
 
 | id | 바꾼 값 | 판정 | 시간 [s] | 실패 항목 |
@@ -23,6 +23,13 @@
 | RW2_hi | RW2=1 | OK | 399 | – |
 | RW3_lo | RW3=-5 | OK | 425 | – |
 | RW3_hi | RW3=15 | NG | 580 | App.1 s25/26 RW Z max [mm]: 883.5713440029155<br>App.1 3.11 rear wing in RV-RW-PROFILES/RWEP-BODY/RW-PYLON/stays: 0.1 cm3 out, max 4 mm at X 3947 (XR 547), Y 552, Z 884 |
+| RW4_lo | RW4=0.04 | OK | 420 | – |
+| RW4_hi | RW4=0.07 | OK | 336 | – |
+| SP1_lo | SP1=-60 | OK | 343 | – |
+| SP1_hi | SP1=40 | OK | 305 | – |
+| SP2_lo | SP2=-50 | OK | 337 | – |
+| SP2_hi | SP2=30 | OK | 340 | – |
+| EC1_lo | EC1=-60 | OK | 415 | – |
 | EC1_hi | EC1=30 | OK | 591 | – |
 | EC2_lo | EC2=0.85 | OK | 430 | – |
 | EC2_hi | EC2=1.1 | NG | 401 | App.1 3.7-3.9 body in RV-BODY-FRONT/DRI-COOL/SIDEPOD/EC/TAIL/TAILPIPE/FLOOR-*: 281.3 cm3 out, max 9 mm at X 2546 (XR -854), Y 550, Z 181 |
@@ -41,4 +48,4 @@
 | RH2_lo | RH2=60 | OK | 344 | – |
 | RH2_hi | RH2=110 | OK | 336 | – |
 
-24/34 통과, 7개 미검사.
+31/41 통과.
