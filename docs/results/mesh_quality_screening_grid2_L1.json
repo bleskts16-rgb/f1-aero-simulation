@@ -1,0 +1,2900 @@
+{
+ "base": {
+  "values": {},
+  "extruded_pct": 89.7294,
+  "wall_faces": 135124,
+  "illegal_faces": 4,
+  "cells": 1283231,
+  "layers": {
+   "body": {
+    "faces": 41913,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36855,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9504,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.3
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.305,
+  "skew_max": 4.89512,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.28019,
+    "cda": 0.99359,
+    "cla_band": 0.19322,
+    "cda_band": 0.07489,
+    "cla_se": 0.00439,
+    "cda_se": 0.00172
+   },
+   "front_wing": {
+    "cla": 0.89733,
+    "cda": 0.10978,
+    "cla_band": 0.03525,
+    "cda_band": 0.00635,
+    "cla_se": 0.00109,
+    "cda_se": 0.00019
+   },
+   "body": {
+    "cla": 0.13063,
+    "cda": 0.24907,
+    "cla_band": 0.15708,
+    "cda_band": 0.02534,
+    "cla_se": 0.0037,
+    "cda_se": 0.00084
+   },
+   "rear_wing": {
+    "cla": 0.65144,
+    "cda": 0.14397,
+    "cla_band": 0.04362,
+    "cda_band": 0.00602,
+    "cla_se": 0.00132,
+    "cda_se": 0.00019
+   },
+   "wheels": {
+    "cla": -0.37982,
+    "cda": 0.36065,
+    "cla_band": 0.04111,
+    "cda_band": 0.07583,
+    "cla_se": 0.00102,
+    "cda_se": 0.00182
+   }
+  }
+ },
+ "FW1_lo": {
+  "values": {
+   "FW1": -3.0
+  },
+  "extruded_pct": 89.7158,
+  "wall_faces": 135207,
+  "illegal_faces": 4,
+  "cells": 1283904,
+  "layers": {
+   "body": {
+    "faces": 41903,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.8
+   },
+   "front_wing": {
+    "faces": 36949,
+    "target": 3,
+    "mean": 2.47,
+    "thick_pct": 78.0
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.9
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.3
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.30522,
+  "skew_max": 4.90668,
+  "skew_faces": 7,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.24278,
+    "cda": 0.99342,
+    "cla_band": 0.17199,
+    "cda_band": 0.07165,
+    "cla_se": 0.00495,
+    "cda_se": 0.00165
+   },
+   "front_wing": {
+    "cla": 0.84752,
+    "cda": 0.09279,
+    "cla_band": 0.0761,
+    "cda_band": 0.0067,
+    "cla_se": 0.00536,
+    "cda_se": 0.00015
+   },
+   "body": {
+    "cla": 0.14059,
+    "cda": 0.25511,
+    "cla_band": 0.13431,
+    "cda_band": 0.02765,
+    "cla_se": 0.00368,
+    "cda_se": 0.00076
+   },
+   "rear_wing": {
+    "cla": 0.65416,
+    "cda": 0.14386,
+    "cla_band": 0.03931,
+    "cda_band": 0.00561,
+    "cla_se": 0.00127,
+    "cda_se": 0.00017
+   },
+   "wheels": {
+    "cla": -0.3901,
+    "cda": 0.36853,
+    "cla_band": 0.04726,
+    "cda_band": 0.07804,
+    "cla_se": 0.00121,
+    "cda_se": 0.00173
+   }
+  }
+ },
+ "FW2_lo": {
+  "values": {
+   "FW2": -4.0
+  },
+  "extruded_pct": 89.81,
+  "wall_faces": 135290,
+  "illegal_faces": 4,
+  "cells": 1285073,
+  "layers": {
+   "body": {
+    "faces": 41894,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.9
+   },
+   "front_wing": {
+    "faces": 37042,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.2
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9501,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.9
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11464,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.3
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.29934,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.15487,
+    "cda": 0.98432,
+    "cla_band": 0.15946,
+    "cda_band": 0.05951,
+    "cla_se": 0.00324,
+    "cda_se": 0.00141
+   },
+   "front_wing": {
+    "cla": 0.75989,
+    "cda": 0.08677,
+    "cla_band": 0.02232,
+    "cda_band": 0.00337,
+    "cla_se": 0.00056,
+    "cda_se": 9e-05
+   },
+   "body": {
+    "cla": 0.14741,
+    "cda": 0.25126,
+    "cla_band": 0.13783,
+    "cda_band": 0.0202,
+    "cla_se": 0.00293,
+    "cda_se": 0.00055
+   },
+   "rear_wing": {
+    "cla": 0.65551,
+    "cda": 0.14434,
+    "cla_band": 0.036,
+    "cda_band": 0.00559,
+    "cla_se": 0.00116,
+    "cda_se": 0.00018
+   },
+   "wheels": {
+    "cla": -0.39395,
+    "cda": 0.36839,
+    "cla_band": 0.04493,
+    "cda_band": 0.07247,
+    "cla_se": 0.00126,
+    "cda_se": 0.00157
+   }
+  }
+ },
+ "FW3_lo": {
+  "values": {
+   "FW3": -3.0
+  },
+  "extruded_pct": 89.7681,
+  "wall_faces": 135175,
+  "illegal_faces": 4,
+  "cells": 1283810,
+  "layers": {
+   "body": {
+    "faces": 41913,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36906,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11464,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.4
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.29929,
+  "skew_max": 5.0065,
+  "skew_faces": 7,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.27024,
+    "cda": 0.99786,
+    "cla_band": 0.15992,
+    "cda_band": 0.06997,
+    "cla_se": 0.00395,
+    "cda_se": 0.00179
+   },
+   "front_wing": {
+    "cla": 0.88982,
+    "cda": 0.10645,
+    "cla_band": 0.02041,
+    "cda_band": 0.00366,
+    "cla_se": 0.00055,
+    "cda_se": 8e-05
+   },
+   "body": {
+    "cla": 0.1236,
+    "cda": 0.25095,
+    "cla_band": 0.13933,
+    "cda_band": 0.02792,
+    "cla_se": 0.00351,
+    "cda_se": 0.00082
+   },
+   "rear_wing": {
+    "cla": 0.65315,
+    "cda": 0.14386,
+    "cla_band": 0.04536,
+    "cda_band": 0.0078,
+    "cla_se": 0.00132,
+    "cda_se": 0.00019
+   },
+   "wheels": {
+    "cla": -0.38259,
+    "cda": 0.36498,
+    "cla_band": 0.0489,
+    "cda_band": 0.07806,
+    "cla_se": 0.00114,
+    "cda_se": 0.00194
+   }
+  }
+ },
+ "FW3_hi": {
+  "values": {
+   "FW3": 3.0
+  },
+  "extruded_pct": 89.6676,
+  "wall_faces": 135119,
+  "illegal_faces": 4,
+  "cells": 1283454,
+  "layers": {
+   "body": {
+    "faces": 41908,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36857,
+    "target": 3,
+    "mean": 2.47,
+    "thick_pct": 78.0
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11462,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.3
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.31578,
+  "skew_max": 4.89512,
+  "skew_faces": 7,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.2654,
+    "cda": 0.98828,
+    "cla_band": 0.20943,
+    "cda_band": 0.06431,
+    "cla_se": 0.00436,
+    "cda_se": 0.00162
+   },
+   "front_wing": {
+    "cla": 0.88156,
+    "cda": 0.11518,
+    "cla_band": 0.04103,
+    "cda_band": 0.00564,
+    "cla_se": 0.00235,
+    "cda_se": 0.00018
+   },
+   "body": {
+    "cla": 0.12326,
+    "cda": 0.24818,
+    "cla_band": 0.15068,
+    "cda_band": 0.03283,
+    "cla_se": 0.00324,
+    "cda_se": 0.00072
+   },
+   "rear_wing": {
+    "cla": 0.65357,
+    "cda": 0.14359,
+    "cla_band": 0.03464,
+    "cda_band": 0.00665,
+    "cla_se": 0.0011,
+    "cda_se": 0.00018
+   },
+   "wheels": {
+    "cla": -0.3715,
+    "cda": 0.35146,
+    "cla_band": 0.04569,
+    "cda_band": 0.0715,
+    "cla_se": 0.00126,
+    "cda_se": 0.00174
+   }
+  }
+ },
+ "FW5_lo": {
+  "values": {
+   "FW5": 0.04
+  },
+  "extruded_pct": 89.7032,
+  "wall_faces": 135100,
+  "illegal_faces": 4,
+  "cells": 1283218,
+  "layers": {
+   "body": {
+    "faces": 41902,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.8
+   },
+   "front_wing": {
+    "faces": 36841,
+    "target": 3,
+    "mean": 2.47,
+    "thick_pct": 78.0
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9505,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.3
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.29602,
+  "skew_max": 4.89512,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.23222,
+    "cda": 0.9894,
+    "cla_band": 0.16874,
+    "cda_band": 0.07579,
+    "cla_se": 0.0044,
+    "cda_se": 0.00156
+   },
+   "front_wing": {
+    "cla": 0.80992,
+    "cda": 0.09937,
+    "cla_band": 0.03614,
+    "cda_band": 0.005,
+    "cla_se": 0.00082,
+    "cda_se": 0.00012
+   },
+   "body": {
+    "cla": 0.15304,
+    "cda": 0.25384,
+    "cla_band": 0.13893,
+    "cda_band": 0.02398,
+    "cla_se": 0.00339,
+    "cda_se": 0.00062
+   },
+   "rear_wing": {
+    "cla": 0.6621,
+    "cda": 0.1436,
+    "cla_band": 0.03581,
+    "cda_band": 0.00643,
+    "cla_se": 0.00093,
+    "cda_se": 0.00021
+   },
+   "wheels": {
+    "cla": -0.38248,
+    "cda": 0.36001,
+    "cla_band": 0.04607,
+    "cda_band": 0.08474,
+    "cla_se": 0.00107,
+    "cda_se": 0.00163
+   }
+  }
+ },
+ "RW1_lo": {
+  "values": {
+   "RW1": -3.0
+  },
+  "extruded_pct": 89.7022,
+  "wall_faces": 135010,
+  "illegal_faces": 4,
+  "cells": 1282894,
+  "layers": {
+   "body": {
+    "faces": 41916,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36855,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26369,
+    "target": 3,
+    "mean": 2.52,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9504,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.8
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11461,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.3
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.31434,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.25335,
+    "cda": 0.98003,
+    "cla_band": 0.16993,
+    "cda_band": 0.08949,
+    "cla_se": 0.0045,
+    "cda_se": 0.002
+   },
+   "front_wing": {
+    "cla": 0.89724,
+    "cda": 0.11022,
+    "cla_band": 0.03529,
+    "cda_band": 0.00645,
+    "cla_se": 0.00093,
+    "cda_se": 0.0002
+   },
+   "body": {
+    "cla": 0.12872,
+    "cda": 0.24804,
+    "cla_band": 0.14933,
+    "cda_band": 0.02324,
+    "cla_se": 0.00363,
+    "cda_se": 0.00066
+   },
+   "rear_wing": {
+    "cla": 0.62847,
+    "cda": 0.13483,
+    "cla_band": 0.04039,
+    "cda_band": 0.00861,
+    "cla_se": 0.0013,
+    "cda_se": 0.00024
+   },
+   "wheels": {
+    "cla": -0.38016,
+    "cda": 0.35721,
+    "cla_band": 0.05683,
+    "cda_band": 0.08455,
+    "cla_se": 0.0015,
+    "cda_se": 0.00196
+   }
+  }
+ },
+ "RW1_hi": {
+  "values": {
+   "RW1": 1.0
+  },
+  "extruded_pct": 89.766,
+  "wall_faces": 135099,
+  "illegal_faces": 4,
+  "cells": 1283388,
+  "layers": {
+   "body": {
+    "faces": 41905,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.8
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26469,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.3
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.4
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.3075,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.24321,
+    "cda": 0.98641,
+    "cla_band": 0.1928,
+    "cda_band": 0.07963,
+    "cla_se": 0.00466,
+    "cda_se": 0.00179
+   },
+   "front_wing": {
+    "cla": 0.89622,
+    "cda": 0.1102,
+    "cla_band": 0.0385,
+    "cda_band": 0.00539,
+    "cla_se": 0.00108,
+    "cda_se": 0.00015
+   },
+   "body": {
+    "cla": 0.12778,
+    "cda": 0.2457,
+    "cla_band": 0.14518,
+    "cda_band": 0.02502,
+    "cla_se": 0.00355,
+    "cda_se": 0.00086
+   },
+   "rear_wing": {
+    "cla": 0.6136,
+    "cda": 0.14623,
+    "cla_band": 0.08434,
+    "cda_band": 0.00798,
+    "cla_se": 0.00232,
+    "cda_se": 0.00021
+   },
+   "wheels": {
+    "cla": -0.37492,
+    "cda": 0.35454,
+    "cla_band": 0.0486,
+    "cda_band": 0.0777,
+    "cla_se": 0.00151,
+    "cda_se": 0.00194
+   }
+  }
+ },
+ "RW2_lo": {
+  "values": {
+   "RW2": -5.0
+  },
+  "extruded_pct": 89.7285,
+  "wall_faces": 135306,
+  "illegal_faces": 4,
+  "cells": 1284537,
+  "layers": {
+   "body": {
+    "faces": 41904,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.8
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26677,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 79.9
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.5
+   }
+  },
+  "nonorth_max": 64.9021,
+  "nonorth_avg": 8.30182,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.23906,
+    "cda": 0.9607,
+    "cla_band": 0.19724,
+    "cda_band": 0.07697,
+    "cla_se": 0.00469,
+    "cda_se": 0.00178
+   },
+   "front_wing": {
+    "cla": 0.88441,
+    "cda": 0.10813,
+    "cla_band": 0.02925,
+    "cda_band": 0.00507,
+    "cla_se": 0.00148,
+    "cda_se": 0.00016
+   },
+   "body": {
+    "cla": 0.12965,
+    "cda": 0.24979,
+    "cla_band": 0.16431,
+    "cda_band": 0.02878,
+    "cla_se": 0.00383,
+    "cda_se": 0.00085
+   },
+   "rear_wing": {
+    "cla": 0.61815,
+    "cda": 0.11842,
+    "cla_band": 0.04451,
+    "cda_band": 0.00617,
+    "cla_se": 0.0013,
+    "cda_se": 0.0002
+   },
+   "wheels": {
+    "cla": -0.37683,
+    "cda": 0.3538,
+    "cla_band": 0.05831,
+    "cda_band": 0.0821,
+    "cla_se": 0.00164,
+    "cda_se": 0.0019
+   }
+  }
+ },
+ "RW2_hi": {
+  "values": {
+   "RW2": 1.0
+  },
+  "extruded_pct": 89.7262,
+  "wall_faces": 135081,
+  "illegal_faces": 4,
+  "cells": 1283672,
+  "layers": {
+   "body": {
+    "faces": 41900,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26456,
+    "target": 3,
+    "mean": 2.52,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.4
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.30782,
+  "skew_max": 4.90664,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.28067,
+    "cda": 1.00048,
+    "cla_band": 0.18449,
+    "cda_band": 0.07046,
+    "cla_se": 0.00442,
+    "cda_se": 0.00167
+   },
+   "front_wing": {
+    "cla": 0.89837,
+    "cda": 0.11069,
+    "cla_band": 0.04257,
+    "cda_band": 0.00712,
+    "cla_se": 0.00123,
+    "cda_se": 0.0002
+   },
+   "body": {
+    "cla": 0.12344,
+    "cda": 0.24839,
+    "cla_band": 0.16205,
+    "cda_band": 0.03337,
+    "cla_se": 0.00359,
+    "cda_se": 0.00088
+   },
+   "rear_wing": {
+    "cla": 0.66032,
+    "cda": 0.14901,
+    "cla_band": 0.04114,
+    "cda_band": 0.00477,
+    "cla_se": 0.00112,
+    "cda_se": 0.00015
+   },
+   "wheels": {
+    "cla": -0.38076,
+    "cda": 0.36278,
+    "cla_band": 0.05014,
+    "cda_band": 0.07549,
+    "cla_se": 0.00159,
+    "cda_se": 0.00192
+   }
+  }
+ },
+ "RW3_lo": {
+  "values": {
+   "RW3": -5.0
+  },
+  "extruded_pct": 89.7471,
+  "wall_faces": 135094,
+  "illegal_faces": 4,
+  "cells": 1283528,
+  "layers": {
+   "body": {
+    "faces": 41900,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36853,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26471,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.3
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11462,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.3
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.29742,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.27743,
+    "cda": 0.99345,
+    "cla_band": 0.19708,
+    "cda_band": 0.07818,
+    "cla_se": 0.00479,
+    "cda_se": 0.00202
+   },
+   "front_wing": {
+    "cla": 0.89637,
+    "cda": 0.11041,
+    "cla_band": 0.0431,
+    "cda_band": 0.00673,
+    "cla_se": 0.00132,
+    "cda_se": 0.00018
+   },
+   "body": {
+    "cla": 0.12769,
+    "cda": 0.24795,
+    "cla_band": 0.14702,
+    "cda_band": 0.02599,
+    "cla_se": 0.00361,
+    "cda_se": 0.0008
+   },
+   "rear_wing": {
+    "cla": 0.65575,
+    "cda": 0.14335,
+    "cla_band": 0.03783,
+    "cda_band": 0.00782,
+    "cla_se": 0.00126,
+    "cda_se": 0.00021
+   },
+   "wheels": {
+    "cla": -0.38169,
+    "cda": 0.36138,
+    "cla_band": 0.04248,
+    "cda_band": 0.07608,
+    "cla_se": 0.00101,
+    "cda_se": 0.00204
+   }
+  }
+ },
+ "RW4_lo": {
+  "values": {
+   "RW4": 0.04
+  },
+  "extruded_pct": 89.7569,
+  "wall_faces": 135086,
+  "illegal_faces": 4,
+  "cells": 1283474,
+  "layers": {
+   "body": {
+    "faces": 41904,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.8
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26457,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.5
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.30468,
+  "skew_max": 4.89513,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.24394,
+    "cda": 0.97529,
+    "cla_band": 0.17031,
+    "cda_band": 0.07088,
+    "cla_se": 0.00422,
+    "cda_se": 0.00168
+   },
+   "front_wing": {
+    "cla": 0.89357,
+    "cda": 0.10964,
+    "cla_band": 0.05755,
+    "cda_band": 0.00818,
+    "cla_se": 0.00286,
+    "cda_se": 0.00064
+   },
+   "body": {
+    "cla": 0.12521,
+    "cda": 0.24805,
+    "cla_band": 0.15612,
+    "cda_band": 0.02895,
+    "cla_se": 0.0035,
+    "cda_se": 0.00089
+   },
+   "rear_wing": {
+    "cla": 0.61938,
+    "cda": 0.13483,
+    "cla_band": 0.0433,
+    "cda_band": 0.00453,
+    "cla_se": 0.00123,
+    "cda_se": 0.00015
+   },
+   "wheels": {
+    "cla": -0.37537,
+    "cda": 0.35266,
+    "cla_band": 0.04378,
+    "cda_band": 0.07813,
+    "cla_se": 0.0011,
+    "cda_se": 0.00178
+   }
+  }
+ },
+ "RW4_hi": {
+  "values": {
+   "RW4": 0.07
+  },
+  "extruded_pct": 89.7149,
+  "wall_faces": 135088,
+  "illegal_faces": 4,
+  "cells": 1283825,
+  "layers": {
+   "body": {
+    "faces": 41872,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26491,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.4
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.30225,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.28606,
+    "cda": 1.00425,
+    "cla_band": 0.19625,
+    "cda_band": 0.08542,
+    "cla_se": 0.00465,
+    "cda_se": 0.00196
+   },
+   "front_wing": {
+    "cla": 0.89678,
+    "cda": 0.11043,
+    "cla_band": 0.03935,
+    "cda_band": 0.00805,
+    "cla_se": 0.00094,
+    "cda_se": 0.00017
+   },
+   "body": {
+    "cla": 0.12028,
+    "cda": 0.24935,
+    "cla_band": 0.16305,
+    "cda_band": 0.02932,
+    "cla_se": 0.00382,
+    "cda_se": 0.00089
+   },
+   "rear_wing": {
+    "cla": 0.67442,
+    "cda": 0.14867,
+    "cla_band": 0.03827,
+    "cda_band": 0.00731,
+    "cla_se": 0.00137,
+    "cda_se": 0.0002
+   },
+   "wheels": {
+    "cla": -0.38385,
+    "cda": 0.36571,
+    "cla_band": 0.04991,
+    "cda_band": 0.08068,
+    "cla_se": 0.00129,
+    "cda_se": 0.00209
+   }
+  }
+ },
+ "SP1_lo": {
+  "values": {
+   "SP1": -60.0
+  },
+  "extruded_pct": 89.2668,
+  "wall_faces": 134536,
+  "illegal_faces": 4,
+  "cells": 1277454,
+  "layers": {
+   "body": {
+    "faces": 41325,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 67.9
+   },
+   "front_wing": {
+    "faces": 36855,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9504,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.9
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.13,
+    "thick_pct": 68.1
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.3
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.29251,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.23371,
+    "cda": 0.98615,
+    "cla_band": 0.19209,
+    "cda_band": 0.07563,
+    "cla_se": 0.00358,
+    "cda_se": 0.00165
+   },
+   "front_wing": {
+    "cla": 0.88968,
+    "cda": 0.10855,
+    "cla_band": 0.04597,
+    "cda_band": 0.00692,
+    "cla_se": 0.00224,
+    "cda_se": 0.00065
+   },
+   "body": {
+    "cla": 0.10752,
+    "cda": 0.26047,
+    "cla_band": 0.15075,
+    "cda_band": 0.0283,
+    "cla_se": 0.00299,
+    "cda_se": 0.00071
+   },
+   "rear_wing": {
+    "cla": 0.618,
+    "cda": 0.14101,
+    "cla_band": 0.02554,
+    "cda_band": 0.00545,
+    "cla_se": 0.00061,
+    "cda_se": 0.00014
+   },
+   "wheels": {
+    "cla": -0.35839,
+    "cda": 0.34192,
+    "cla_band": 0.04222,
+    "cda_band": 0.08732,
+    "cla_se": 0.00148,
+    "cda_se": 0.00187
+   }
+  }
+ },
+ "SP1_hi": {
+  "values": {
+   "SP1": 40.0
+  },
+  "extruded_pct": 89.7556,
+  "wall_faces": 135459,
+  "illegal_faces": 4,
+  "cells": 1284970,
+  "layers": {
+   "body": {
+    "faces": 42252,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.5
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 566,
+    "target": 3,
+    "mean": 2.14,
+    "thick_pct": 68.4
+   },
+   "wake_boards": {
+    "faces": 11464,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.3
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.31362,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.28151,
+    "cda": 0.97275,
+    "cla_band": 0.21013,
+    "cda_band": 0.08734,
+    "cla_se": 0.00463,
+    "cda_se": 0.00186
+   },
+   "front_wing": {
+    "cla": 0.89802,
+    "cda": 0.11073,
+    "cla_band": 0.03811,
+    "cda_band": 0.00573,
+    "cla_se": 0.00089,
+    "cda_se": 0.00017
+   },
+   "body": {
+    "cla": 0.13271,
+    "cda": 0.24531,
+    "cla_band": 0.15707,
+    "cda_band": 0.02351,
+    "cla_se": 0.00384,
+    "cda_se": 0.00081
+   },
+   "rear_wing": {
+    "cla": 0.64161,
+    "cda": 0.14085,
+    "cla_band": 0.04101,
+    "cda_band": 0.00583,
+    "cla_se": 0.00135,
+    "cda_se": 0.0002
+   },
+   "wheels": {
+    "cla": -0.37235,
+    "cda": 0.34694,
+    "cla_band": 0.04775,
+    "cda_band": 0.08318,
+    "cla_se": 0.00123,
+    "cda_se": 0.0019
+   }
+  }
+ },
+ "SP2_lo": {
+  "values": {
+   "SP2": -50.0
+  },
+  "extruded_pct": 89.6996,
+  "wall_faces": 135072,
+  "illegal_faces": 4,
+  "cells": 1283781,
+  "layers": {
+   "body": {
+    "faces": 41858,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9504,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 573,
+    "target": 3,
+    "mean": 2.16,
+    "thick_pct": 69.6
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.4
+   }
+  },
+  "nonorth_max": 64.8985,
+  "nonorth_avg": 8.30196,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.27033,
+    "cda": 1.0069,
+    "cla_band": 0.16689,
+    "cda_band": 0.07471,
+    "cla_se": 0.00424,
+    "cda_se": 0.00167
+   },
+   "front_wing": {
+    "cla": 0.8845,
+    "cda": 0.10812,
+    "cla_band": 0.03052,
+    "cda_band": 0.00449,
+    "cla_se": 0.00167,
+    "cda_se": 0.00016
+   },
+   "body": {
+    "cla": 0.1402,
+    "cda": 0.26531,
+    "cla_band": 0.15778,
+    "cda_band": 0.02847,
+    "cla_se": 0.00372,
+    "cda_se": 0.00076
+   },
+   "rear_wing": {
+    "cla": 0.64392,
+    "cda": 0.14281,
+    "cla_band": 0.0408,
+    "cda_band": 0.00649,
+    "cla_se": 0.0012,
+    "cda_se": 0.00016
+   },
+   "wheels": {
+    "cla": -0.37459,
+    "cda": 0.35079,
+    "cla_band": 0.04857,
+    "cda_band": 0.07686,
+    "cla_se": 0.00136,
+    "cda_se": 0.00183
+   }
+  }
+ },
+ "SP2_hi": {
+  "values": {
+   "SP2": 30.0
+  },
+  "extruded_pct": 89.8583,
+  "wall_faces": 135066,
+  "illegal_faces": 4,
+  "cells": 1283192,
+  "layers": {
+   "body": {
+    "faces": 41859,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9502,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 568,
+    "target": 3,
+    "mean": 2.13,
+    "thick_pct": 68.1
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.4
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.30815,
+  "skew_max": 4.89512,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.2401,
+    "cda": 0.99248,
+    "cla_band": 0.22845,
+    "cda_band": 0.07226,
+    "cla_se": 0.00497,
+    "cda_se": 0.00175
+   },
+   "front_wing": {
+    "cla": 0.89366,
+    "cda": 0.11004,
+    "cla_band": 0.05463,
+    "cda_band": 0.00707,
+    "cla_se": 0.00173,
+    "cda_se": 0.00021
+   },
+   "body": {
+    "cla": 0.12291,
+    "cda": 0.25314,
+    "cla_band": 0.1702,
+    "cda_band": 0.02808,
+    "cla_se": 0.00404,
+    "cda_se": 0.00098
+   },
+   "rear_wing": {
+    "cla": 0.62401,
+    "cda": 0.14183,
+    "cla_band": 0.04238,
+    "cda_band": 0.00512,
+    "cla_se": 0.00165,
+    "cda_se": 0.00019
+   },
+   "wheels": {
+    "cla": -0.37676,
+    "cda": 0.35467,
+    "cla_band": 0.04908,
+    "cda_band": 0.08062,
+    "cla_se": 0.00261,
+    "cda_se": 0.00184
+   }
+  }
+ },
+ "EC1_lo": {
+  "values": {
+   "EC1": -60.0
+  },
+  "extruded_pct": 89.8975,
+  "wall_faces": 135936,
+  "illegal_faces": 4,
+  "cells": 1290868,
+  "layers": {
+   "body": {
+    "faces": 42722,
+    "target": 3,
+    "mean": 2.19,
+    "thick_pct": 70.4
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.9
+   },
+   "helmet": {
+    "faces": 570,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.1
+   },
+   "wake_boards": {
+    "faces": 11467,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.4
+   }
+  },
+  "nonorth_max": 64.8821,
+  "nonorth_avg": 8.3154,
+  "skew_max": 5.61085,
+  "skew_faces": 9,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.2251,
+    "cda": 0.99543,
+    "cla_band": 0.17708,
+    "cda_band": 0.07237,
+    "cla_se": 0.00372,
+    "cda_se": 0.00173
+   },
+   "front_wing": {
+    "cla": 0.89575,
+    "cda": 0.11063,
+    "cla_band": 0.05012,
+    "cda_band": 0.00703,
+    "cla_se": 0.00136,
+    "cda_se": 0.00018
+   },
+   "body": {
+    "cla": 0.12281,
+    "cda": 0.23964,
+    "cla_band": 0.13848,
+    "cda_band": 0.02818,
+    "cla_se": 0.00293,
+    "cda_se": 0.0007
+   },
+   "rear_wing": {
+    "cla": 0.61463,
+    "cda": 0.14183,
+    "cla_band": 0.03801,
+    "cda_band": 0.00414,
+    "cla_se": 0.00109,
+    "cda_se": 0.00011
+   },
+   "wheels": {
+    "cla": -0.38514,
+    "cda": 0.36984,
+    "cla_band": 0.04384,
+    "cda_band": 0.08822,
+    "cla_se": 0.00126,
+    "cda_se": 0.0019
+   }
+  }
+ },
+ "EC1_hi": {
+  "values": {
+   "EC1": 30.0
+  },
+  "extruded_pct": 89.5565,
+  "wall_faces": 134754,
+  "illegal_faces": 4,
+  "cells": 1281063,
+  "layers": {
+   "body": {
+    "faces": 41541,
+    "target": 3,
+    "mean": 2.16,
+    "thick_pct": 69.2
+   },
+   "front_wing": {
+    "faces": 36856,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9502,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 571,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 67.8
+   },
+   "wake_boards": {
+    "faces": 11464,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.4
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.29264,
+  "skew_max": 4.89015,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.24742,
+    "cda": 0.98871,
+    "cla_band": 0.18853,
+    "cda_band": 0.07435,
+    "cla_se": 0.00456,
+    "cda_se": 0.00184
+   },
+   "front_wing": {
+    "cla": 0.88817,
+    "cda": 0.10871,
+    "cla_band": 0.05822,
+    "cda_band": 0.00746,
+    "cla_se": 0.00419,
+    "cda_se": 0.00049
+   },
+   "body": {
+    "cla": 0.122,
+    "cda": 0.26078,
+    "cla_band": 0.16389,
+    "cda_band": 0.02488,
+    "cla_se": 0.00366,
+    "cda_se": 0.00078
+   },
+   "rear_wing": {
+    "cla": 0.62718,
+    "cda": 0.14117,
+    "cla_band": 0.04239,
+    "cda_band": 0.00726,
+    "cla_se": 0.00143,
+    "cda_se": 0.00019
+   },
+   "wheels": {
+    "cla": -0.3726,
+    "cda": 0.3465,
+    "cla_band": 0.04762,
+    "cda_band": 0.08716,
+    "cla_se": 0.00142,
+    "cda_se": 0.00202
+   }
+  }
+ },
+ "EC2_lo": {
+  "values": {
+   "EC2": 0.85
+  },
+  "extruded_pct": 89.7789,
+  "wall_faces": 135083,
+  "illegal_faces": 4,
+  "cells": 1284611,
+  "layers": {
+   "body": {
+    "faces": 41875,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "front_wing": {
+    "faces": 36853,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 570,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11462,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.4
+   }
+  },
+  "nonorth_max": 64.9107,
+  "nonorth_avg": 8.29479,
+  "skew_max": 4.89512,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.40379,
+    "cda": 0.97351,
+    "cla_band": 0.20602,
+    "cda_band": 0.04469,
+    "cla_se": 0.00705,
+    "cda_se": 0.00098
+   },
+   "front_wing": {
+    "cla": 0.8997,
+    "cda": 0.11114,
+    "cla_band": 0.04328,
+    "cda_band": 0.00668,
+    "cla_se": 0.00127,
+    "cda_se": 0.00017
+   },
+   "body": {
+    "cla": 0.23706,
+    "cda": 0.24443,
+    "cla_band": 0.1686,
+    "cda_band": 0.02968,
+    "cla_se": 0.00382,
+    "cda_se": 0.00067
+   },
+   "rear_wing": {
+    "cla": 0.60895,
+    "cda": 0.14067,
+    "cla_band": 0.03094,
+    "cda_band": 0.006,
+    "cla_se": 0.00083,
+    "cda_se": 0.00014
+   },
+   "wheels": {
+    "cla": -0.31103,
+    "cda": 0.33654,
+    "cla_band": 0.05398,
+    "cda_band": 0.05576,
+    "cla_se": 0.00139,
+    "cda_se": 0.00127
+   }
+  }
+ },
+ "EC3_lo": {
+  "values": {
+   "EC3": -80.0
+  },
+  "extruded_pct": 89.3785,
+  "wall_faces": 134529,
+  "illegal_faces": 4,
+  "cells": 1279952,
+  "layers": {
+   "body": {
+    "faces": 41322,
+    "target": 3,
+    "mean": 2.14,
+    "thick_pct": 68.6
+   },
+   "front_wing": {
+    "faces": 36853,
+    "target": 3,
+    "mean": 2.47,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9504,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 567,
+    "target": 3,
+    "mean": 2.13,
+    "thick_pct": 68.2
+   },
+   "wake_boards": {
+    "faces": 11463,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.4
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.28469,
+  "skew_max": 4.89512,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.26103,
+    "cda": 0.9743,
+    "cla_band": 0.19018,
+    "cda_band": 0.06501,
+    "cla_se": 0.0059,
+    "cda_se": 0.0015
+   },
+   "front_wing": {
+    "cla": 0.8996,
+    "cda": 0.1098,
+    "cla_band": 0.05846,
+    "cda_band": 0.00628,
+    "cla_se": 0.00146,
+    "cda_se": 0.00032
+   },
+   "body": {
+    "cla": 0.15001,
+    "cda": 0.25057,
+    "cla_band": 0.15563,
+    "cda_band": 0.02279,
+    "cla_se": 0.00422,
+    "cda_se": 0.0007
+   },
+   "rear_wing": {
+    "cla": 0.60581,
+    "cda": 0.14118,
+    "cla_band": 0.03095,
+    "cda_band": 0.00556,
+    "cla_se": 0.00098,
+    "cda_se": 0.00013
+   },
+   "wheels": {
+    "cla": -0.37004,
+    "cda": 0.34252,
+    "cla_band": 0.06315,
+    "cda_band": 0.06588,
+    "cla_se": 0.00127,
+    "cda_se": 0.00174
+   }
+  }
+ },
+ "FB2_lo": {
+  "values": {
+   "FB2": 700.0
+  },
+  "extruded_pct": 89.7145,
+  "wall_faces": 135210,
+  "illegal_faces": 4,
+  "cells": 1284493,
+  "layers": {
+   "body": {
+    "faces": 41886,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.6
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9500,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.9
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11581,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.7
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.29979,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.2415,
+    "cda": 0.97572,
+    "cla_band": 0.15004,
+    "cda_band": 0.07292,
+    "cla_se": 0.00351,
+    "cda_se": 0.00169
+   },
+   "front_wing": {
+    "cla": 0.88522,
+    "cda": 0.10807,
+    "cla_band": 0.03059,
+    "cda_band": 0.00374,
+    "cla_se": 0.00149,
+    "cda_se": 0.00014
+   },
+   "body": {
+    "cla": 0.10859,
+    "cda": 0.24368,
+    "cla_band": 0.13448,
+    "cda_band": 0.01932,
+    "cla_se": 0.00285,
+    "cda_se": 0.00059
+   },
+   "rear_wing": {
+    "cla": 0.63627,
+    "cda": 0.14023,
+    "cla_band": 0.03355,
+    "cda_band": 0.00452,
+    "cla_se": 0.00098,
+    "cda_se": 0.00014
+   },
+   "wheels": {
+    "cla": -0.37606,
+    "cda": 0.35762,
+    "cla_band": 0.04677,
+    "cda_band": 0.08308,
+    "cla_se": 0.00171,
+    "cda_se": 0.00173
+   }
+  }
+ },
+ "FB3_lo": {
+  "values": {
+   "FB3": 300.0
+  },
+  "extruded_pct": 89.7988,
+  "wall_faces": 133906,
+  "illegal_faces": 4,
+  "cells": 1276162,
+  "layers": {
+   "body": {
+    "faces": 41905,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36853,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.9
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 10256,
+    "target": 3,
+    "mean": 2.29,
+    "thick_pct": 71.8
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.29025,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.23901,
+    "cda": 0.97375,
+    "cla_band": 0.16329,
+    "cda_band": 0.06073,
+    "cla_se": 0.00414,
+    "cda_se": 0.00151
+   },
+   "front_wing": {
+    "cla": 0.88558,
+    "cda": 0.1084,
+    "cla_band": 0.02735,
+    "cda_band": 0.00454,
+    "cla_se": 0.00085,
+    "cda_se": 0.00013
+   },
+   "body": {
+    "cla": 0.09642,
+    "cda": 0.24116,
+    "cla_band": 0.13167,
+    "cda_band": 0.0222,
+    "cla_se": 0.00332,
+    "cda_se": 0.00069
+   },
+   "rear_wing": {
+    "cla": 0.6533,
+    "cda": 0.1412,
+    "cla_band": 0.03147,
+    "cda_band": 0.006,
+    "cla_se": 0.00118,
+    "cda_se": 0.00015
+   },
+   "wheels": {
+    "cla": -0.37383,
+    "cda": 0.36006,
+    "cla_band": 0.0474,
+    "cda_band": 0.07311,
+    "cla_se": 0.00221,
+    "cda_se": 0.00156
+   }
+  }
+ },
+ "FB3_hi": {
+  "values": {
+   "FB3": 500.0
+  },
+  "extruded_pct": 89.5436,
+  "wall_faces": 136242,
+  "illegal_faces": 4,
+  "cells": 1289233,
+  "layers": {
+   "body": {
+    "faces": 41932,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.6
+   },
+   "front_wing": {
+    "faces": 36855,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9502,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 12564,
+    "target": 3,
+    "mean": 2.15,
+    "thick_pct": 66.6
+   }
+  },
+  "nonorth_max": 64.9198,
+  "nonorth_avg": 8.31952,
+  "skew_max": 4.90668,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.2651,
+    "cda": 0.99996,
+    "cla_band": 0.14837,
+    "cda_band": 0.07609,
+    "cla_se": 0.00366,
+    "cda_se": 0.00179
+   },
+   "front_wing": {
+    "cla": 0.88464,
+    "cda": 0.10811,
+    "cla_band": 0.03233,
+    "cda_band": 0.00534,
+    "cla_se": 0.00186,
+    "cda_se": 0.00011
+   },
+   "body": {
+    "cla": 0.13293,
+    "cda": 0.26107,
+    "cla_band": 0.14479,
+    "cda_band": 0.02819,
+    "cla_se": 0.00315,
+    "cda_se": 0.00078
+   },
+   "rear_wing": {
+    "cla": 0.63117,
+    "cda": 0.14289,
+    "cla_band": 0.04523,
+    "cda_band": 0.00852,
+    "cla_se": 0.00157,
+    "cda_se": 0.00023
+   },
+   "wheels": {
+    "cla": -0.36983,
+    "cda": 0.34965,
+    "cla_band": 0.04984,
+    "cda_band": 0.08225,
+    "cla_se": 0.00151,
+    "cda_se": 0.00195
+   }
+  }
+ },
+ "FB4_lo": {
+  "values": {
+   "FB4": 0.0
+  },
+  "extruded_pct": 89.7637,
+  "wall_faces": 135097,
+  "illegal_faces": 4,
+  "cells": 1283534,
+  "layers": {
+   "body": {
+    "faces": 41905,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "front_wing": {
+    "faces": 36854,
+    "target": 3,
+    "mean": 2.48,
+    "thick_pct": 78.1
+   },
+   "rear_wing": {
+    "faces": 26484,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8336,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9503,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.9
+   },
+   "helmet": {
+    "faces": 569,
+    "target": 3,
+    "mean": 2.12,
+    "thick_pct": 68.0
+   },
+   "wake_boards": {
+    "faces": 11446,
+    "target": 3,
+    "mean": 2.23,
+    "thick_pct": 69.3
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.30311,
+  "skew_max": 4.89512,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.27169,
+    "cda": 0.98915,
+    "cla_band": 0.20097,
+    "cda_band": 0.08299,
+    "cla_se": 0.00452,
+    "cda_se": 0.00185
+   },
+   "front_wing": {
+    "cla": 0.89617,
+    "cda": 0.11041,
+    "cla_band": 0.04968,
+    "cda_band": 0.00591,
+    "cla_se": 0.00156,
+    "cda_se": 0.00017
+   },
+   "body": {
+    "cla": 0.12219,
+    "cda": 0.24603,
+    "cla_band": 0.15258,
+    "cda_band": 0.02641,
+    "cla_se": 0.00334,
+    "cda_se": 0.00072
+   },
+   "rear_wing": {
+    "cla": 0.66054,
+    "cda": 0.14374,
+    "cla_band": 0.04474,
+    "cda_band": 0.00696,
+    "cla_se": 0.00133,
+    "cda_se": 0.00022
+   },
+   "wheels": {
+    "cla": -0.38135,
+    "cda": 0.35695,
+    "cla_band": 0.0519,
+    "cda_band": 0.09573,
+    "cla_se": 0.00146,
+    "cda_se": 0.00196
+   }
+  }
+ },
+ "RH1_lo": {
+  "values": {
+   "RH1": 20.0
+  },
+  "extruded_pct": 89.2504,
+  "wall_faces": 133940,
+  "illegal_faces": 2,
+  "cells": 1270826,
+  "layers": {
+   "body": {
+    "faces": 41864,
+    "target": 3,
+    "mean": 2.15,
+    "thick_pct": 68.9
+   },
+   "front_wing": {
+    "faces": 35942,
+    "target": 3,
+    "mean": 2.46,
+    "thick_pct": 77.2
+   },
+   "rear_wing": {
+    "faces": 26437,
+    "target": 3,
+    "mean": 2.52,
+    "thick_pct": 80.0
+   },
+   "wheels_front": {
+    "faces": 8339,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.0
+   },
+   "wheels_rear": {
+    "faces": 9501,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 70.0
+   },
+   "helmet": {
+    "faces": 558,
+    "target": 3,
+    "mean": 2.13,
+    "thick_pct": 68.4
+   },
+   "wake_boards": {
+    "faces": 11299,
+    "target": 3,
+    "mean": 2.19,
+    "thick_pct": 68.4
+   }
+  },
+  "nonorth_max": 64.9627,
+  "nonorth_avg": 8.33805,
+  "skew_max": 5.78227,
+  "skew_faces": 15,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.32319,
+    "cda": 0.99226,
+    "cla_band": 0.19608,
+    "cda_band": 0.07093,
+    "cla_se": 0.00453,
+    "cda_se": 0.00152
+   },
+   "front_wing": {
+    "cla": 0.91334,
+    "cda": 0.11365,
+    "cla_band": 0.02992,
+    "cda_band": 0.00483,
+    "cla_se": 0.00089,
+    "cda_se": 0.00014
+   },
+   "body": {
+    "cla": 0.15008,
+    "cda": 0.25696,
+    "cla_band": 0.16614,
+    "cda_band": 0.02292,
+    "cla_se": 0.00368,
+    "cda_se": 0.00056
+   },
+   "rear_wing": {
+    "cla": 0.64728,
+    "cda": 0.1509,
+    "cla_band": 0.03739,
+    "cda_band": 0.00402,
+    "cla_se": 0.00187,
+    "cda_se": 0.00012
+   },
+   "wheels": {
+    "cla": -0.35839,
+    "cda": 0.33135,
+    "cla_band": 0.05106,
+    "cda_band": 0.08309,
+    "cla_se": 0.00124,
+    "cda_se": 0.00178
+   }
+  }
+ },
+ "RH1_hi": {
+  "values": {
+   "RH1": 45.0
+  },
+  "extruded_pct": 89.2039,
+  "wall_faces": 133752,
+  "illegal_faces": 4,
+  "cells": 1277162,
+  "layers": {
+   "body": {
+    "faces": 42265,
+    "target": 3,
+    "mean": 2.14,
+    "thick_pct": 68.4
+   },
+   "front_wing": {
+    "faces": 35633,
+    "target": 3,
+    "mean": 2.46,
+    "thick_pct": 77.5
+   },
+   "rear_wing": {
+    "faces": 26442,
+    "target": 3,
+    "mean": 2.53,
+    "thick_pct": 80.1
+   },
+   "wheels_front": {
+    "faces": 8353,
+    "target": 3,
+    "mean": 1.94,
+    "thick_pct": 62.1
+   },
+   "wheels_rear": {
+    "faces": 9504,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.9
+   },
+   "helmet": {
+    "faces": 575,
+    "target": 3,
+    "mean": 2.24,
+    "thick_pct": 72.7
+   },
+   "wake_boards": {
+    "faces": 10980,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 67.2
+   }
+  },
+  "nonorth_max": 64.8534,
+  "nonorth_avg": 8.3079,
+  "skew_max": 5.02278,
+  "skew_faces": 10,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.12165,
+    "cda": 0.97836,
+    "cla_band": 0.18701,
+    "cda_band": 0.07867,
+    "cla_se": 0.00393,
+    "cda_se": 0.00185
+   },
+   "front_wing": {
+    "cla": 0.84348,
+    "cda": 0.10242,
+    "cla_band": 0.05282,
+    "cda_band": 0.00478,
+    "cla_se": 0.00164,
+    "cda_se": 0.00014
+   },
+   "body": {
+    "cla": 0.10688,
+    "cda": 0.24992,
+    "cla_band": 0.13004,
+    "cda_band": 0.02248,
+    "cla_se": 0.00315,
+    "cda_se": 0.00064
+   },
+   "rear_wing": {
+    "cla": 0.61314,
+    "cda": 0.14258,
+    "cla_band": 0.03338,
+    "cda_band": 0.00601,
+    "cla_se": 0.00134,
+    "cda_se": 0.00014
+   },
+   "wheels": {
+    "cla": -0.37747,
+    "cda": 0.35168,
+    "cla_band": 0.04578,
+    "cda_band": 0.09276,
+    "cla_se": 0.0018,
+    "cda_se": 0.00205
+   }
+  }
+ },
+ "RH2_lo": {
+  "values": {
+   "RH2": 60.0
+  },
+  "extruded_pct": 89.7912,
+  "wall_faces": 134932,
+  "illegal_faces": 4,
+  "cells": 1271773,
+  "layers": {
+   "body": {
+    "faces": 42261,
+    "target": 3,
+    "mean": 2.19,
+    "thick_pct": 70.4
+   },
+   "front_wing": {
+    "faces": 36831,
+    "target": 3,
+    "mean": 2.47,
+    "thick_pct": 78.2
+   },
+   "rear_wing": {
+    "faces": 26456,
+    "target": 3,
+    "mean": 2.52,
+    "thick_pct": 80.2
+   },
+   "wheels_front": {
+    "faces": 8339,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9502,
+    "target": 3,
+    "mean": 2.17,
+    "thick_pct": 69.7
+   },
+   "helmet": {
+    "faces": 571,
+    "target": 3,
+    "mean": 2.26,
+    "thick_pct": 72.9
+   },
+   "wake_boards": {
+    "faces": 10972,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 67.6
+   }
+  },
+  "nonorth_max": 64.9512,
+  "nonorth_avg": 8.34115,
+  "skew_max": 5.06466,
+  "skew_faces": 4,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.28915,
+    "cda": 0.99623,
+    "cla_band": 0.16139,
+    "cda_band": 0.07204,
+    "cla_se": 0.00348,
+    "cda_se": 0.00167
+   },
+   "front_wing": {
+    "cla": 0.86581,
+    "cda": 0.10565,
+    "cla_band": 0.0596,
+    "cda_band": 0.00582,
+    "cla_se": 0.00166,
+    "cda_se": 0.0002
+   },
+   "body": {
+    "cla": 0.16422,
+    "cda": 0.26474,
+    "cla_band": 0.13356,
+    "cda_band": 0.01869,
+    "cla_se": 0.00309,
+    "cda_se": 0.0005
+   },
+   "rear_wing": {
+    "cla": 0.68199,
+    "cda": 0.14347,
+    "cla_band": 0.02695,
+    "cda_band": 0.00373,
+    "cla_se": 0.0008,
+    "cda_se": 0.0001
+   },
+   "wheels": {
+    "cla": -0.3663,
+    "cda": 0.34134,
+    "cla_band": 0.03903,
+    "cda_band": 0.07382,
+    "cla_se": 0.00107,
+    "cda_se": 0.00177
+   }
+  }
+ },
+ "RH2_hi": {
+  "values": {
+   "RH2": 110.0
+  },
+  "extruded_pct": 89.2742,
+  "wall_faces": 134405,
+  "illegal_faces": 2,
+  "cells": 1306793,
+  "layers": {
+   "body": {
+    "faces": 42042,
+    "target": 3,
+    "mean": 2.14,
+    "thick_pct": 68.9
+   },
+   "front_wing": {
+    "faces": 36443,
+    "target": 3,
+    "mean": 2.46,
+    "thick_pct": 77.5
+   },
+   "rear_wing": {
+    "faces": 26392,
+    "target": 3,
+    "mean": 2.51,
+    "thick_pct": 79.9
+   },
+   "wheels_front": {
+    "faces": 8339,
+    "target": 3,
+    "mean": 1.97,
+    "thick_pct": 63.1
+   },
+   "wheels_rear": {
+    "faces": 9499,
+    "target": 3,
+    "mean": 2.18,
+    "thick_pct": 69.9
+   },
+   "helmet": {
+    "faces": 568,
+    "target": 3,
+    "mean": 2.2,
+    "thick_pct": 71.0
+   },
+   "wake_boards": {
+    "faces": 11122,
+    "target": 3,
+    "mean": 2.19,
+    "thick_pct": 68.3
+   }
+  },
+  "nonorth_max": 64.8675,
+  "nonorth_avg": 8.24062,
+  "skew_max": 8.3918,
+  "skew_faces": 6,
+  "failed_checks": 1,
+  "forces": {
+   "total": {
+    "cla": 1.35359,
+    "cda": 1.02518,
+    "cla_band": 0.21666,
+    "cda_band": 0.0824,
+    "cla_se": 0.00675,
+    "cda_se": 0.00178
+   },
+   "front_wing": {
+    "cla": 0.92662,
+    "cda": 0.12052,
+    "cla_band": 0.03913,
+    "cda_band": 0.00991,
+    "cla_se": 0.00121,
+    "cda_se": 0.00024
+   },
+   "body": {
+    "cla": 0.13628,
+    "cda": 0.26065,
+    "cla_band": 0.1887,
+    "cda_band": 0.0324,
+    "cla_se": 0.00492,
+    "cda_se": 0.00095
+   },
+   "rear_wing": {
+    "cla": 0.68724,
+    "cda": 0.15622,
+    "cla_band": 0.03293,
+    "cda_band": 0.00616,
+    "cla_se": 0.00115,
+    "cda_se": 0.00018
+   },
+   "wheels": {
+    "cla": -0.37609,
+    "cda": 0.34969,
+    "cla_band": 0.06047,
+    "cda_band": 0.08018,
+    "cla_se": 0.00145,
+    "cda_se": 0.00187
+   }
+  }
+ }
+}
