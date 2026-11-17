@@ -10,7 +10,8 @@ Adapted from the text-to-cad F1 concept car (third_party/text-to-cad, MIT):
 - a smooth loft that wanders outside its own sections while staying valid and
   watertight (our tail bulged before the centripetal fix); checked slab by slab
   between neighbouring sections, which is stricter than their whole-loft box;
-- an exported STL that is not closed, which snappyHexMesh cannot inside-test.
+- an exported STL that is not closed, which snappyHexMesh cannot inside-test
+  (sliver gaps up to STL_GAP_LIMIT = 0.1 mm pass, see `stl_gaps`).
 
 All functions only read geometry; none of them changes a shape.
 """
@@ -158,6 +159,45 @@ def read_stl(path):
     rec = np.frombuffer(raw, dtype=np.dtype([("n", "<f4", 3), ("v", "<f4", (3, 3)),
                                              ("a", "<u2")]), count=n, offset=84)
     return rec["v"].astype(float)
+
+
+STL_GAP_LIMIT = 1e-4   # m; open-edge clusters no larger than this pass (2026-11-17, user)
+
+
+def stl_gaps(path, merge=1e-7):
+    """(open edges, triangles, largest gap [m]) of an exported STL. Open edges are grouped
+    into connected clusters (shared vertices) and the largest cluster's bounding-box
+    diagonal is reported. OCC tessellation of fused struts can leave a sliver hole of a
+    few hundredths of a mm (DOE 1, 2026-11-17: 0.07 mm on suspension_rear at high rake);
+    that is far below the smallest mesh cell (~6 mm) and snappyHexMesh never inside-tests
+    the part STLs (inside refinement uses boxes; the fluid side is set by locationInMesh),
+    so gaps up to STL_GAP_LIMIT pass. Widening `merge` instead is wrong: welding collapses
+    small triangles and opens new holes (base body.stl: 1188 open edges at 0.01 mm)."""
+    tri = read_stl(path)
+    pts, ids = np.unique(np.round(tri.reshape(-1, 3) / merge), axis=0, return_inverse=True)
+    pts = pts * merge
+    t = ids.ravel().reshape(-1, 3)
+    t = t[(t[:, 0] != t[:, 1]) & (t[:, 1] != t[:, 2]) & (t[:, 0] != t[:, 2])]
+    e = np.sort(np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]]), axis=1)
+    ue, counts = np.unique(e, axis=0, return_counts=True)
+    op = ue[counts != 2]
+    if len(op) == 0:
+        return 0, len(t), 0.0
+    parent = {v: v for v in np.unique(op)}
+    def find(v):
+        while parent[v] != v:
+            parent[v] = parent[parent[v]]
+            v = parent[v]
+        return v
+    for a, b in op:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+    groups = {}
+    for v in parent:
+        groups.setdefault(find(v), []).append(v)
+    gap = max(float(np.linalg.norm(pts[g].max(0) - pts[g].min(0))) for g in groups.values())
+    return len(op), len(t), gap
 
 
 def stl_open_edges(path, merge=1e-7):

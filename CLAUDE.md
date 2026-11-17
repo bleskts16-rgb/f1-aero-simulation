@@ -83,6 +83,7 @@ python scripts/surface_fields.py cfd/runs/<케이스>                   # 표면
 python scripts/run_designs_cfd.py data/designs/screening.csv        # 검사 OK 설계를 차례로 L1 해석 → docs/results/cfd_<목록>_grid2_L1/
 python scripts/mesh_quality.py data/designs/screening.csv          # 케이스 로그에서 경계층 비율·격자 품질 → docs/results/mesh_quality_<목록>_grid2_L1.md
 python scripts/lap_delta_designs.py data/designs/screening.csv     # 설계별 CL·A/CD·A % 변화 → 9개 서킷 랩타임 변화 → docs/results/lap_<목록>_grid2_L1.md
+python scripts/make_doe.py doe1 --n 40 --vars RH1 RH2 FW2 RW2 EC2 EC1 SP1 FW5 --range FW2=-4:2 --range EC2=0.85:1.05 --range FW5=0.04:0.07   # LHS 설계 목록
 python scripts/fit_surrogate.py                                     # 값 서로게이트(GP, surrogate/) 학습 + LOO → data/surrogate/, docs/results/surrogate_scalar_*.md
 python scripts/fit_field_surrogate.py                               # 표면 Cp 서로게이트(투영→POD→GP) + LOO → docs/results/surrogate_field_*.md
 python scripts/grid_study.py prepare|push|status|fetch|run-local|analyze <study>   # --scheme grid2 = 바닥 박스 + 고정 첫 층

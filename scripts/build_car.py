@@ -240,9 +240,11 @@ def geometry_checks(parts, outdir, half):
         if name in parts:
             checks += qa.attached(name, parts[name], {"body": parts["body"], wheel: parts[wheel]})
     for name in parts:
-        n_open, n_tri = qa.stl_open_edges(outdir / f"{name}.stl")
-        checks.append(qa.Check(f"{name}.stl closed", n_open == 0,
-                               f"{n_open} open edges / {n_tri} triangles"))
+        n_open, n_tri, gap = qa.stl_gaps(outdir / f"{name}.stl")
+        checks.append(qa.Check(f"{name}.stl closed", gap <= qa.STL_GAP_LIMIT,
+                               f"{n_open} open edges / {n_tri} triangles"
+                               + (f", largest gap {gap * 1000:.3f} mm (limit {qa.STL_GAP_LIMIT * 1000:g} mm)"
+                                  if n_open else "")))
     return checks
 
 
