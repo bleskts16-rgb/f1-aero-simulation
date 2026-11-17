@@ -48,9 +48,13 @@ def signed_volume(solid):
     return props.Mass()
 
 
-def solid_checks(name, shape, expect_solids=1):
+def solid_checks(name, shape, expect_solids=1, bool_shape=None):
     """Topology, orientation and boolean-suitability of one part.
-    expect_solids=None skips the count (parts made of separate members)."""
+    expect_solids=None skips the count (parts made of separate members).
+    bool_shape: the same part before its rigid ride-height move (car frame), used for
+    the BRepAlgoAPI_Check only. The helmet and mirrors are identical in every design and
+    pass there, but failed after some pitches (DOE 1: helmet at 0.792 deg, mirrors at
+    0.674 deg), which a rigid move cannot do to the geometry (2026-11-17, user)."""
     out = []
     try:
         solids = shape.Solids()
@@ -63,7 +67,8 @@ def solid_checks(name, shape, expect_solids=1):
         out.append(Check(f"{name}: BRepCheck valid",
                          BRepCheck_Analyzer(shape.wrapped).IsValid()))
         out.append(Check(f"{name}: boolean-ready (BRepAlgoAPI_Check)",
-                         BRepAlgoAPI_Check(shape.wrapped).IsValid()))
+                         BRepAlgoAPI_Check((bool_shape or shape).wrapped).IsValid(),
+                         "car frame" if bool_shape is not None else ""))
     except Exception as e:  # a failed computation is not a pass
         out.append(Check(f"{name}: checks raised", False, repr(e)))
     return out

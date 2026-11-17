@@ -217,8 +217,13 @@ def volume_checks(p, sprung):
     return rows
 
 
-def geometry_checks(parts, outdir, half):
-    """cad.qa checks on the exported parts and on every loft that built them."""
+BOOL_CHECK_CAR_FRAME = ("helmet", "mirrors")   # boolean check before the ride-height move
+
+
+def geometry_checks(parts, outdir, half, car_frame=None):
+    """cad.qa checks on the exported parts and on every loft that built them.
+    car_frame: the sprung parts before to_ground (half builds); the parts in
+    BOOL_CHECK_CAR_FRAME take their boolean check from there (see qa.solid_checks)."""
     checks = []
     # the full car keeps left/right tyres and wake boards as separate bodies;
     # suspension parts are sets of members (track rod apart from the wishbones)
@@ -232,7 +237,8 @@ def geometry_checks(parts, outdir, half):
                                excess <= qa.LOFT_ESCAPE_LIMIT,
                                f"{excess:.1f} mm{where} (limit {qa.LOFT_ESCAPE_LIMIT:.0f})"))
     for name, shape in parts.items():
-        checks += qa.solid_checks(name, shape, expect[name])
+        cf = (car_frame or {}).get(name) if name in BOOL_CHECK_CAR_FRAME else None
+        checks += qa.solid_checks(name, shape, expect[name], bool_shape=cf)
     for name in ("halo", "wake_boards", "mirrors", "helmet"):
         if name in parts:
             checks += qa.attached(name, parts[name], {"body": parts["body"]})
@@ -344,7 +350,7 @@ def build_and_check(p, outdir, half=True, render_png=None, verbose=True):
     if verbose:
         print(f"exported {outdir.relative_to(ROOT)}  (STL in m, STEP in mm)")
 
-    checks = geometry_checks(parts, outdir, half)
+    checks = geometry_checks(parts, outdir, half, car_frame=sprung if half else None)
     geo_ok = qa.report(checks, "geometry QA (cad/qa.py)") if verbose else all(c.ok for c in checks)
 
     if render_png is not None:
