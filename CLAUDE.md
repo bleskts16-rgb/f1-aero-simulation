@@ -82,6 +82,7 @@ python scripts/cfd_report.py cfd/runs/baseline_half_L1 --aref 1.474  # 시간·�
 python scripts/surface_fields.py cfd/runs/<케이스>                   # 표면 Cp·Cf(1000회 평균) → surface_fields.npz, 힘과 대조
 python scripts/run_designs_cfd.py data/designs/screening.csv        # 검사 OK 설계를 차례로 L1 해석 → docs/results/cfd_<목록>_grid2_L1/
 python scripts/mesh_quality.py data/designs/screening.csv          # 케이스 로그에서 경계층 비율·격자 품질 → docs/results/mesh_quality_<목록>_grid2_L1.md
+python scripts/lap_delta_designs.py data/designs/screening.csv     # 설계별 CL·A/CD·A % 변화 → 9개 서킷 랩타임 변화 → docs/results/lap_<목록>_grid2_L1.md
 python scripts/grid_study.py prepare|push|status|fetch|run-local|analyze <study>   # --scheme grid2 = 바닥 박스 + 고정 첫 층
 python scripts/extract_ttc_reference.py                              # 참고 모델 바닥 수치표 → docs/references/
 ```
